@@ -177,25 +177,14 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/computed_torque_mod_controller/command_joints_opt", 1, &ComputedTorqueMod::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
-        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/computed_torque_mod_controller/adaptiveFlag", 1, &ComputedTorqueMod::setFlagUpdate, this);  
-        // this->sub_flag_opt_ = node_handle.subscribe<panda_controllers::flag>("/computed_torque_mod_controller/optFlag", 1, &ComputedTorqueMod::setFlagOpt, this);
+        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/computed_torque_mod_controller/command_joints", 1, &ComputedTorqueMod::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
+        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/computed_torque_mod_controller/adaptiveFlag", 1, &ComputedTorqueMod::setFlagUpdate, this);
         
         this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1); //dà informazione a topic loggin l'errore che si commette 
         this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
-        this->pub_opt_ = node_handle.advertise<panda_controllers::udata>("opt_data", 1); //Public for optimal problem 
 
         /* Initialize regressor object (oggetto thunderpanda) */
         // fastRegMat.init(NJ);
-
-        /*Resize*/
-        H_vec.resize(700);
-        H.setZero(10,70);
-        E.setZero(70);
-        l = 0;
-
-        Y_stack_sum.setZero();
-        redY_stack_sum.setZero();
 
         return true;
     }
@@ -373,7 +362,7 @@ namespace panda_controllers{
         fastRegMat.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
         Y_norm = fastRegMat.getReg();
         // ROS_INFO_STREAM(Y_norm.transpose());
-        redY_norm = Y_norm.block(0,(NJ-1)*PARAM,NJ,PARAM);
+        // redY_norm = Y_norm.block(0,(NJ-1)*PARAM,NJ,PARAM);
 
 
         /*Calcolo a meno del regressore di attrito*/
@@ -400,21 +389,11 @@ namespace panda_controllers{
         // Y_norm_D << Y_norm, Y_D; // concatenation
         
         err_param = tau_J - Y_norm*param; // - Y_D_norm*param_frict;
-        
-        redY_norm = Y_norm.block(0,(NJ-1)*PARAM,NJ,PARAM);
-        redtau_J = tau_J - Y_norm.block(0,0,NJ,(NJ-1)*PARAM)*param.segment(0,(NJ-1)*PARAM);
         param7 = param.segment((NJ-1)*PARAM, PARAM);
 
         /* se vi è stato aggiornamento, calcolo il nuovo valore che paramatri assumono secondo la seguente legge*/
         if (update_param_flag){
-            // ROS_INFO("ciao");
-            H_vec = Eigen::Map<Eigen::VectorXd> (H.data(), 700);
-
-            redStackCompute(redY_norm, H, l, tau_J, E);
-
-            Y_stack_sum.segment((NJ-1)*PARAM, PARAM) = redY_stack_sum;
-            // dot_param = 0.01*Rinv*(Y_mod.transpose()*dot_error + 0.3*Y_norm.transpose()*(err_param)); // legge aggiornamento parametri se vi è update(CAMBIARE RINV NEGLI ESPERIMENTI)
-            dot_param = 0.01*Rinv*(Y_mod.transpose()*dot_error + 0.2*Y_stack_sum + 0.3*Y_norm.transpose()*(err_param));
+            dot_param = 0.01*Rinv*(Y_mod.transpose()*dot_error + 0.3*Y_norm.transpose()*(err_param));
             param = param + dt*dot_param;
             // dot_param_frict = 0.01*Rinv_fric*(Y_D.transpose()*dot_error + 0.3*Y_D_norm.transpose()*(err_param));
             // param_frict = param_frict + dt*dot_param_frict;
@@ -471,12 +450,6 @@ namespace panda_controllers{
         msg_config.xyz.y = T0EE.translation()(1);
         msg_config.xyz.z = T0EE.translation()(2);
 
-        fillMsg(msg_opt.q_cur, q_curr);
-        fillMsg(msg_opt.dot_q_curr, dot_q_curr);
-        fillMsg(msg_opt.ddot_q_curr, ddot_q_curr);
-        fillMsg(msg_opt.H_stack, H_vec);
-
-        this->pub_opt_.publish(msg_opt);
         this->pub_err_.publish(msg_log); // publico su nodo logging, i valori dei parametri aggiornati con la legge di controllo, e e dot_e (in pratica il vettori di stato del problema aumentato) 
         this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?
     }
@@ -485,61 +458,6 @@ namespace panda_controllers{
     {
 	//TO DO
     }
-
-    double ComputedTorqueMod::redStackCompute(const Eigen::Matrix<double, NJ, PARAM>& red_Y, Eigen::MatrixXd& H,int& l, const Eigen::Matrix<double, NJ, 1>& red_tau_J, Eigen::VectorXd& E){
-        const int P = 10;
-        const double epsilon = 0.1;
-        double Vmax = 0;
-
-        if (l <= (P-1)){
-            if ((red_Y.transpose()-H.block(0,l*NJ,P,NJ)).norm()/(red_Y.transpose()).norm() >= epsilon){
-                H.block(0,l*NJ,P,NJ) = red_Y.transpose();
-                E.segment(l*NJ,NJ) = red_tau_J;
-                l = l+1;
-                // ROS_INFO_STREAM(H*H.transpose());
-            }
-                                
-        }else{
-            if ((red_Y.transpose()-H.block(0,(P-1)*NJ,P,NJ)).norm()/(red_Y.transpose()).norm() >= epsilon){
-                Eigen::MatrixXd Th = H;
-                Eigen::MatrixXd Te = E;
-                
-                Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_V(H*H.transpose());
-                double V = (solver_V.singularValues()).minCoeff();
-                // double V = (red_Y.transpose()-H.block(0,(P-1)*NJ,P,NJ)).norm()/(red_Y.transpose()).norm();
-
-                Eigen::VectorXd S(P);
-                for (int i = 0; i < P; ++i) {
-                    H.block(0,i*NJ,P,NJ) = red_Y.transpose();
-                    Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_S(H*H.transpose());
-                    S(i) = (solver_S.singularValues()).minCoeff();
-                    H = Th;
-                    // ROS_INFO_STREAM(solver_S.singularValues());
-
-                    /*Information Approach(minor compute load?)*/
-                    // S(i) = (Y.transpose()-H.block(0,i*NJ,P,NJ)).norm()/(Y.transpose()).norm();
-                }
-                Vmax = S.maxCoeff();
-                Eigen::Index m; //index max eigvalues 
-                S.maxCoeff(&m);
-                
-
-                if(Vmax >= V){
-                    H.block(0,m*NJ,P,NJ) = red_Y.transpose();
-                    // Te = E;
-                    E.segment(m*NJ,NJ) = red_tau_J;
-                    ROS_INFO_STREAM(Vmax);
-                }
-                else{
-                    H = Th;
-                    E = Te;
-                }
-            }
-        }
-        // ROS_INFO_STREAM(Vmax);
-        return Vmax;
-    }
-
 
     // Funzione per l'aggiunta di un dato al buffer_dq
     void ComputedTorqueMod::aggiungiDato(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {

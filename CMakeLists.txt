@@ -27,7 +27,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen3 REQUIRED)
 find_package(Franka 0.5.0 REQUIRED)
-find_package(NLopt REQUIRED CONFIG)
+# find_package(NLopt REQUIRED CONFIG)
 find_package(yaml-cpp REQUIRED)
 
 # Stampa il percorso alle directory di inclusione della libreria Nlopt
@@ -50,7 +50,6 @@ add_message_files(FILES
 	link_params.msg
 	flag.msg
 	Vec7D.msg
-	udata.msg
 	rpy.msg
 	impedanceGain.msg
 )
@@ -64,7 +63,7 @@ generate_messages(
 include_directories(
 	${catkin_INCLUDE_DIRS} 
 	${EIGEN3_INCLUDE_DIRS}
-	${NLOPT_INCLUDE_DIRS}
+	# ${NLOPT_INCLUDE_DIRS}
 	${YAML_CPP_INCLUDE_DIRS}  # Include yaml-cpp directories
 	#${Boost_INCLUDE_DIRS}
 #	${CasADi_INCLUDE_DIRS}
@@ -163,21 +162,21 @@ add_dependencies(com_joints_sin_node
 	${catkin_EXPORTED_TARGETS}
 )
 
-add_executable(command_opt
-	src/command_opt.cpp
-	src/thunder_panda_2.cpp
-	# src/gen_regr_fun.cpp
-	src/panda_2_gen.cpp
-)
-target_link_libraries(command_opt
-	${catkin_LIBRARIES}
-	${NLOPT_LIBRARIES}
-	yaml-cpp
-)
-add_dependencies(command_opt
-	${${PROJECT_NAME}_EXPORTED_TARGETS} 
-	${catkin_EXPORTED_TARGETS}
-)
+# add_executable(command_opt
+# 	src/command_opt.cpp
+# 	src/thunder_panda_2.cpp
+# 	# src/gen_regr_fun.cpp
+# 	src/panda_2_gen.cpp
+# )
+# target_link_libraries(command_opt
+# 	${catkin_LIBRARIES}
+# 	${NLOPT_LIBRARIES}
+# 	yaml-cpp
+# )
+# add_dependencies(command_opt
+# 	${${PROJECT_NAME}_EXPORTED_TARGETS} 
+# 	${catkin_EXPORTED_TARGETS}
+# )
 
 # add_executable(close_hand_node 
 # 	src/close_hand_node.cpp
@@ -193,7 +192,7 @@ add_executable(adaptive_throw
 
 target_link_libraries(adaptive_throw 
 	${catkin_LIBRARIES}
-	${NLOPT_LIBRARIES}
+	# ${NLOPT_LIBRARIES}
 	yaml-cpp
 )
 

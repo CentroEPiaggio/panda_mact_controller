@@ -3,7 +3,7 @@
 #include <array> 
 #include <string>
 #include <vector>
-#include <nlopt.hpp>
+// #include <nlopt.hpp>
 #include <math.h>
 #include <Eigen/Dense>
 
@@ -27,7 +27,6 @@
 #include "panda_controllers/link_params.h"
 #include "panda_controllers/log_adaptive_joints.h"
 #include "panda_controllers/flag.h"
-#include "panda_controllers/udata.h"
 
 // #include "utils/ThunderPanda.h"
 #include "utils/thunder_panda_2.h"
@@ -68,7 +67,6 @@ namespace panda_controllers
         /* Definig the timing */
         
         double dt;
-        int l;
         ros::Time time_now;
        
         Eigen::Affine3d T0EE;
@@ -114,13 +112,8 @@ namespace panda_controllers
         Eigen::Matrix<double, 7, 1> tau_J;
         Eigen::Matrix<double, 7, 1> err_param;
         Eigen::Matrix<double, 7, 1> err_param_frict;
-        
-        Eigen::MatrixXd H;
-        Eigen::VectorXd E;
-        Eigen::VectorXd H_vec;
-        
+            
         /* Error and dot error feedback */
-        
         Eigen::Matrix<double, 7, 1> error;
         Eigen::Matrix<double, 7, 1> dot_error;
         Eigen::Matrix<double, 14, 1> x;
@@ -162,9 +155,6 @@ namespace panda_controllers
         
         Eigen::Matrix<double, NJ, NJ*PARAM> Y_mod;
         Eigen::Matrix<double, NJ, NJ*PARAM> Y_norm;
-        Eigen::Matrix<double, NJ, PARAM> redY_norm;
-        Eigen::Matrix<double, PARAM, 1> redY_stack_sum;
-        Eigen::Matrix<double, NJ*PARAM, 1> Y_stack_sum;
         Eigen::Matrix<double, NJ, NJ*FRICTION> Y_D;
         Eigen::Matrix<double, NJ, NJ*FRICTION> Y_D_norm;
         // Eigen::Matrix<double, NJ, NJ*(PARAM+FRICTION)> Y_mod_D;
@@ -181,7 +171,6 @@ namespace panda_controllers
             const Eigen::Matrix<double, 7, 1>& tau_J_d);
         
         Eigen::Matrix<double, 7, 1> tau_J_d;
-        Eigen::Matrix<double, 7, 1> redtau_J;
 
         static constexpr double kDeltaTauMax {1.0};
 
@@ -190,18 +179,11 @@ namespace panda_controllers
         void aggiungiDato(std::vector<Eigen::Matrix<double, 7, 1>>& buffer_, const Eigen::Matrix<double, 7, 1>& dato_, int lunghezza_finestra_);
         Eigen::Matrix<double, 7, 1> calcolaMedia(const std::vector<Eigen::Matrix<double, 7, 1>>& buffer_);
         double deltaCompute (double a);
-        
-        /*Function cost*/
-        // double objective_function (const std::vector<double> &x, std::vector<double> &grad, void *data);
-
-        double redStackCompute(const Eigen::Matrix<double, NJ, PARAM>& red_Y, Eigen::MatrixXd& H,int& l, const Eigen::Matrix<double, NJ, 1>& red_tau_J, Eigen::VectorXd& E);
 
         /* ROS variables */
-        
         ros::NodeHandle cvc_nh;
         ros::Subscriber sub_command_;
         ros::Subscriber sub_flag_update_;
-        ros::Subscriber sub_flag_opt_;
         
         ros::Publisher pub_err_;
         ros::Publisher pub_config_;
@@ -214,14 +196,9 @@ namespace panda_controllers
         /*Setting Flag Callback*/
         void setFlagUpdate(const flag::ConstPtr& msg);
         
-
         std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
         std::unique_ptr<franka_hw::FrankaModelHandle> model_handle_;
         std::vector<hardware_interface::JointHandle> joint_handles_;
-
-
-        /* Definizione variabile filtro*/
-        // FiltroPassaBasso filtro;
 
         /* Message */
         
@@ -231,7 +208,7 @@ namespace panda_controllers
 
         panda_controllers::log_adaptive_joints msg_log;
         panda_controllers::point msg_config;
-        panda_controllers::udata msg_opt;
+        // panda_controllers::udata msg_opt;
     };
 
 }

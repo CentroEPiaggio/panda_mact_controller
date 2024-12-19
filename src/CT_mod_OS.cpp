@@ -226,8 +226,8 @@ namespace panda_controllers{
 		/*Start command subscriber and publisher */
 		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/CT_mod_controller_OS/command_cartesian", 1, &CTModOS::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
 		this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/CT_mod_controller_OS/adaptiveFlag", 1, &CTModOS::setFlagUpdate, this); // Set adaptive_flag to true  
-		this->sub_command_j_ = node_handle.subscribe<sensor_msgs::JointState> ("/CT_mod_controller_OS/command_joints_opt", 1, &CTModOS::setCommandCBJ, this);
-		this->sub_flag_opt_ = node_handle.subscribe<panda_controllers::flag>("/CT_mod_controller_OS/optFlag", 1, &CTModOS::setFlagOpt, this);
+		// this->sub_command_j_ = node_handle.subscribe<sensor_msgs::JointState> ("/CT_mod_controller_OS/command_joints", 1, &CTModOS::setCommandCBJ, this);
+		// this->sub_flag_opt_ = node_handle.subscribe<panda_controllers::flag>("/CT_mod_controller_OS/optFlag", 1, &CTModOS::setFlagJoints, this);
 		// this->sub_joints =  node_handle.subscribe<sensor_msgs::JointState>("/franka_state_controller/joint_states", 1, &CTModOS::jointsCallbackT, this);
 		this->sub_impedance_gains_ = node_handle.subscribe<panda_controllers::impedanceGain>("/CT_mod_controller_OS/impedanceGains", 1, &CTModOS::setGains, this);
 		this->sub_command_rpy_ = node_handle.subscribe<panda_controllers::rpy>("/CT_mod_controller_OS/command_rpy", 1, &CTModOS::setRPYcmd, this);
@@ -236,27 +236,26 @@ namespace panda_controllers{
 		this->sub_Fext_ = node_handle.subscribe<geometry_msgs::WrenchStamped>("/franka_state_controller/F_ext", 1, &CTModOS::callbackFext, this);
 
 		this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_cartesian> ("logging", 1); //Public error variables and tau
-		this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //Public Xi,dot_XI,ddot_XI 
-		this->pub_opt_ = node_handle.advertise<panda_controllers::udata>("opt_data", 1); //Public for optimal problem 
+		this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //Public Xi,dot_XI,ddot_XI
 		
 		/*Initialize Stack Procedure*/
-		l = 0;
-		count = 0;
+		// l = 0;
+		// count = 0;
 		epsilon = 0.1;
-		update_opt_flag = false;
+		// update_opt_flag = false;
 		reset_adp_flag = false;
 		lambda_min = 0;
 	   
-		S.setZero(10);
-		H.setZero(10,70);
-		E.setZero(70); 
+		// S.setZero(10);
+		// H.setZero(10,70);
+		// E.setZero(70); 
 		/* Friction case stack*/
 		// H.setZero(14,98);
 		// E.setZero(98); 
 
-        Y_stack_sum.setZero();
-        redY_stack_sum.setZero();
-        H_vec.resize(700);
+        // Y_stack_sum.setZero();
+        // redY_stack_sum.setZero();
+        // H_vec.resize(700);
 
 		ros::Rate(10).sleep();
 
@@ -297,9 +296,9 @@ namespace panda_controllers{
 		dot_qr.setZero();
 		ddot_qr.setZero();
 
-		ddq_opt.setZero();
-		dq_opt.setZero();
-		q_opt.setZero();
+		// ddq_opt.setZero();
+		// dq_opt.setZero();
+		// q_opt.setZero();
 
 		// Vector center of limit's joints
 		q_c << 0.0, 0.0, 0.0, -1.5708, 0.0, 1.8675, 0.0;
@@ -395,24 +394,24 @@ namespace panda_controllers{
 		ee_position = T0EE.translation();
 		ee_velocity = J.topRows(3)*dot_q_curr;
 
-		if (update_opt_flag == false){
-			error.head(3) = ee_pos_cmd - ee_position;
-			dot_error.head(3) = ee_vel_cmd - ee_velocity;
+		// if (update_opt_flag == false){
+		error.head(3) = ee_pos_cmd - ee_position;
+		dot_error.head(3) = ee_vel_cmd - ee_velocity;
 		  
-		} else{
-			qr = q_opt;
-			dot_qr = dq_opt;
-			ddot_qr = ddq_opt;
+		// } else{
+		// 	qr = q_opt;
+		// 	dot_qr = dq_opt;
+		// 	ddot_qr = ddq_opt;
 			
-			/*Switch to joints control*/
-			error_q = qr - q_curr;
-			// dot_error_q = dot_qr - dot_q_curr;
+		// 	/*Switch to joints control*/
+		// 	error_q = qr - q_curr;
+		// 	// dot_error_q = dot_qr - dot_q_curr;
 
-			error.head(3) = computeT0EE(qr).translation() - ee_position;
-			dot_error.head(3) = J.topRows(3)*dot_qr - ee_velocity;
-			ee_rot_cmd = computeT0EE(qr).linear();
-			ee_ang_vel_cmd = J.bottomRows(3)*dot_qr;
-		}
+		// 	error.head(3) = computeT0EE(qr).translation() - ee_position;
+		// 	dot_error.head(3) = J.topRows(3)*dot_qr - ee_velocity;
+		// 	ee_rot_cmd = computeT0EE(qr).linear();
+		// 	ee_ang_vel_cmd = J.bottomRows(3)*dot_qr;
+		// }
 	
 		/* Compute error orientation */
   		ee_rot = T0EE.linear();
@@ -432,21 +431,21 @@ namespace panda_controllers{
 		error.tail(3) = vect(Rs_tilde);
 		dot_error.tail(3) = L_tmp.transpose()*ee_ang_vel_cmd-L_tmp*ee_omega;
 		
-		if (update_opt_flag == false){
-			/* Inverse-Kinematics */
-			ee_vel_cmd_tot << ee_vel_cmd, L_tmp.transpose()*ee_ang_vel_cmd;
-			ee_acc_cmd_tot << ee_acc_cmd, L_dot_tmp.transpose()*ee_ang_vel_cmd + L_tmp.transpose()*ee_ang_acc_cmd;
-			
-			tmp_conversion0.setIdentity();
-			tmp_conversion0.block(3, 3, 3, 3) = L_tmp;
-			tmp_conversion1.setIdentity();
-			tmp_conversion1.block(3, 3, 3, 3) = L_tmp.inverse();
-			tmp_conversion2.setZero();
-			tmp_conversion2.block(3, 3, 3, 3) = -L_tmp.inverse() * L_dot_tmp *L_tmp.inverse();
+		// if (update_opt_flag == false){
+		/* Inverse-Kinematics */
+		ee_vel_cmd_tot << ee_vel_cmd, L_tmp.transpose()*ee_ang_vel_cmd;
+		ee_acc_cmd_tot << ee_acc_cmd, L_dot_tmp.transpose()*ee_ang_vel_cmd + L_tmp.transpose()*ee_ang_acc_cmd;
+		
+		tmp_conversion0.setIdentity();
+		tmp_conversion0.block(3, 3, 3, 3) = L_tmp;
+		tmp_conversion1.setIdentity();
+		tmp_conversion1.block(3, 3, 3, 3) = L_tmp.inverse();
+		tmp_conversion2.setZero();
+		tmp_conversion2.block(3, 3, 3, 3) = -L_tmp.inverse() * L_dot_tmp *L_tmp.inverse();
 
-			dot_qr = J_pinv*tmp_conversion1*ee_vel_cmd_tot; 
-			ddot_qr = J_pinv*tmp_conversion1*ee_acc_cmd_tot + J_pinv*tmp_conversion2*ee_vel_cmd_tot +J_dot_pinv*tmp_conversion1*ee_vel_cmd_tot + N1*Kn*(q_c - q_curr - 0.2*dot_q_curr); 
-		}
+		dot_qr = J_pinv*tmp_conversion1*ee_vel_cmd_tot; 
+		ddot_qr = J_pinv*tmp_conversion1*ee_acc_cmd_tot + J_pinv*tmp_conversion2*ee_vel_cmd_tot +J_dot_pinv*tmp_conversion1*ee_vel_cmd_tot + N1*Kn*(q_c - q_curr - 0.2*dot_q_curr); 
+		// }
 
 		/* Error definition in Null Space*/
 		dot_error_q = dot_qr - dot_q_curr;
@@ -525,7 +524,7 @@ namespace panda_controllers{
 	  
 		/* command torque to joint */
 		tau_cmd_old = tau_cmd;
-		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp_xi*error + J.transpose()*Kv_xi*dot_error;// + Kn*dot_error_Nq0;
+		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp_xi*error + J.transpose()*Kv_xi*dot_error + Kn*dot_error_Nq0;
 
 		/*For testing without Adp*/
 		// tau_cmd = M*ddot_qr + C + G + J.transpose()*Kp_xi*error + J.transpose()*Kv_xi*dot_error + Kn*dot_error_Nq0;
@@ -631,97 +630,6 @@ namespace panda_controllers{
 		return sgn;
 	}
 
-	double CTModOS::redStackCompute(const Eigen::Matrix<double, NJ, PARAM>& red_Y_new, Eigen::MatrixXd& H,int& l, const Eigen::Matrix<double, NJ, 1>& red_tau_J_new, Eigen::VectorXd& E){
-		const int P = 10;
-		const double epsilon = 0.1;
-		double Vmax = 0;
-
-		if (l <= (P-1)){
-			if ((red_Y_new.transpose()-H.block(0,l*NJ,P,NJ)).norm()/(red_Y_new.transpose()).norm() >= epsilon){
-				H.block(0,l*NJ,P,NJ) = red_Y_new.transpose();
-				E.segment(l*NJ,NJ) = red_tau_J_new;
-				l = l+1;
-				// ROS_INFO_STREAM(l);
-			}
-								
-		}else{
-			/*Aprroccio braccio reale*/
-			if (count%10 == 0){
-				red_Y = red_Y_new;
-				red_tau_J = red_tau_J_new;
-				count = 0;
-			}
-			// red_Y = red_Y_new;
-			// red_tau_J = red_tau_J_new;
-			count = count+1;
-
-			Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_V(H*H.transpose());
-			double V = (solver_V.singularValues()).minCoeff();
-			if ((red_Y.transpose()-H.block(0,(P-1)*NJ,P,NJ)).norm()/(red_Y.transpose()).norm() >= epsilon){
-				Eigen::MatrixXd Th = H;
-				Eigen::MatrixXd Te = E;
-
-
-				/*Pezzo classico per simulazione*/
-				// Eigen::VectorXd S(P);
-				// for (int i = 0; i < P; ++i) {
-				//     H.block(0,i*NJ,P,NJ) = red_Y.transpose();
-				//     Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_S(H*H.transpose());
-				//     S(i) = (solver_S.singularValues()).minCoeff();
-				//     H = Th;
-				// }
-		
-				H.block(0,(count-1)*NJ,P,NJ) = red_Y.transpose();
-				Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_S(H*H.transpose());
-				S(count-1) = (solver_S.singularValues()).minCoeff();
-				H = Th;
-				
-				if (count == 10){
-					Vmax = S.maxCoeff();
-					Eigen::Index m; //index max eigvalues 
-					S.maxCoeff(&m);
-
-					/*Aprroccio braccio reale*/
-					if(Vmax >= V){
-						H.block(0,m*NJ,P,NJ) = red_Y.transpose();
-						E.segment(m*NJ,NJ) = red_tau_J;
-			
-					}else{
-						Vmax = V;
-						H = Th;
-						E = Te;
-				}    
-				}else{
-					Vmax = V;
-					H = Th;
-					E = Te;
-				}
-
-				
-				// if(Vmax >= V){
-				//     H.block(0,m*NJ,P,NJ) = red_Y.transpose();
-				//     // Te = E;
-				//     E.segment(m*NJ,NJ) = red_tau_J;
-				//     // ROS_INFO_STREAM(Vmax);
-				// }
-				// else{
-				//     Vmax = V;
-				//     H = Th;
-				//     E = Te;
-				// }
-			}
-			else{
-				count = 0;
-				Vmax = V;
-			}
-		}
-		// ROS_INFO_STREAM(Vmax);
-		// Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_cond(H*H.transpose());
-		// double lmax = (solver_cond.singularValues()).maxCoeff();
-		// return (lmax/Vmax);
-		return Vmax;
-	}
-
 	// Define the function to be called when ctrl-c (SIGINT) is sent to process
 	void CTModOS::signal_callback_handler(int signum){
 		cout << "Caught signal " << signum << endl;
@@ -751,12 +659,12 @@ namespace panda_controllers{
 		ee_acc_cmd << msg->acceleration.x, msg->acceleration.y, msg->acceleration.z;
 	}  
 
-	void CTModOS::setCommandCBJ(const sensor_msgs::JointStateConstPtr& msg)
-	{
-		q_opt = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->position).data());
-		dq_opt = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->velocity).data());
-		ddq_opt = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
-	}
+	// void CTModOS::setCommandCBJ(const sensor_msgs::JointStateConstPtr& msg)
+	// {
+	// 	q_opt = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->position).data());
+	// 	dq_opt = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->velocity).data());
+	// 	ddq_opt = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
+	// }
 
 	void CTModOS::setGains(const panda_controllers::impedanceGain::ConstPtr& msg)
 	{
@@ -769,12 +677,12 @@ namespace panda_controllers{
 
 	void CTModOS::setRPYcmd(const panda_controllers::rpy::ConstPtr& msg){
 		// ee_rot_cmd << msg->roll, msg->pitch, msg->yaw;
-		if(update_opt_flag == false){
-			ee_rot_cmd = 
-			Eigen::AngleAxisd(msg->angle[0], Eigen::Vector3d::UnitX()) *
-			Eigen::AngleAxisd(msg->angle[1], Eigen::Vector3d::UnitY()) *
-			Eigen::AngleAxisd(msg->angle[2], Eigen::Vector3d::UnitZ());
-		}
+		// if(update_opt_flag == false){
+			// ee_rot_cmd = 
+		Eigen::AngleAxisd(msg->angle[0], Eigen::Vector3d::UnitX()) *
+		Eigen::AngleAxisd(msg->angle[1], Eigen::Vector3d::UnitY()) *
+		Eigen::AngleAxisd(msg->angle[2], Eigen::Vector3d::UnitZ());
+		// }
 		// ROS_INFO_STREAM(ee_rot_cmd);
 	}
 
@@ -829,9 +737,9 @@ namespace panda_controllers{
 		update_param_flag = msg->flag;
 	}
 	
-	void CTModOS::setFlagOpt(const panda_controllers::flag::ConstPtr& msg){
-		update_opt_flag = msg->flag;
-	}
+	// void CTModOS::setFlagJoints(const panda_controllers::flag::ConstPtr& msg){
+	// 	update_opt_flag = msg->flag;
+	// }
 
 	void CTModOS::setResetFlag(const panda_controllers::flag::ConstPtr& msg){
 		reset_adp_flag = msg->flag;

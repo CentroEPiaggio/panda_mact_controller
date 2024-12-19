@@ -9,7 +9,6 @@
 #include <geometry_msgs/PoseStamped.h>
 #include "panda_controllers/desTrajEE.h"
 #include "panda_controllers/flag.h"
-#include "panda_controllers/udata.h"
 #include "panda_controllers/rpy.h"
 #include "panda_controllers/impedanceGain.h"
 
@@ -21,7 +20,6 @@
 
 /*Libreria per ottimo*/
 #include "utils/thunder_panda_2.h"
-#include "nlopt.hpp"
 #include "utils/utils_cartesian.h"
 
 // ROS Service and Message Includes
@@ -76,14 +74,7 @@ min_jerk_class min_jerk;
 // lissagious parameters
 double ampX, ampY, ampZ, freqX, freqY, freqZ, phiX, phiZ, offX, offY, offZ, liss_T;
 
-/*Opt variable*/
-// Eigen::MatrixXd H_true;
-// Eigen::VectorXd S(10);
-int counter;
-Eigen::Matrix<double, NJ,PARAM*NJ> Y; 
-Eigen::Matrix<double, NJ,PARAM> redY;
-Eigen::VectorXd H_vec(700);
-int l_counter;
+Eigen::Matrix<double, NJ,PARAM*NJ> Y;
 thunder_ns::thunder_panda_2 fastRegMat;
 Eigen::Matrix<double, NJ, 1> q_c;
 
@@ -113,18 +104,9 @@ struct rpy_struct_cartesian{
 rpy_struct_cartesian rpy_cartesian;
 
 
-struct UserData {
-    std::vector<double> H;
-    int l;
-	double t;
-	int count;
-} udata;
-
 // ----- FUNCTIONS ----- //
 void qbhand1_move(float);
 void qbhand2_move(float, float);
-double objective(const std::vector<double> &x, std::vector<double> &grad, void *data);
-double redStackCompute(const Eigen::Matrix<double, NJ, PARAM>& red_Y, Eigen::MatrixXd& H,int& l);
 
 // Define the function to be called when ctrl-c (SIGINT) is sent to process
 void signal_callback_handler(int signum){
@@ -146,20 +128,6 @@ void jointsCallback( const sensor_msgs::JointStateConstPtr& msg ){
 		q_end = q_start;
 		ready2 = true;
 	}
-}
-
-void udataCallback(const panda_controllers::udata::ConstPtr& msg){
-
-	for(int i = 0; i<70; ++i){
-		H_vec.segment(i*PARAM, PARAM) << msg->H_stack[i*PARAM], msg->H_stack[i*PARAM+1], msg->H_stack[i*PARAM+2], msg->H_stack[i*PARAM+3], msg->H_stack[i*PARAM+4], msg->H_stack[i*PARAM+5], msg->H_stack[i*PARAM+6], msg->H_stack[i*PARAM+7], msg->H_stack[i*PARAM+8], msg->H_stack[i*PARAM+9];
-	}
-	counter = msg->count;
-	l_counter = msg->l;
-	for(int i = 0; i<7; ++i){
-		ee_vel(i) = msg->ee_velocity[i];
-	// cout << l_counter << endl;
-	}
-
 }
 
 traj_struct_joints interpolator_joints(Eigen::VectorXd pos_i, Eigen::VectorXd d_pos_i, Eigen::VectorXd dd_pos_i, Eigen::VectorXd pos_f, Eigen::VectorXd d_pos_f, Eigen::VectorXd dd_pos_f, double tf, double t){
@@ -283,132 +251,46 @@ void frankaCallback(const franka_msgs::FrankaStateConstPtr& msg){
 	}
 }
 
-/*Funzione obiettivo problema di ottimo*/
-double objective(const std::vector<double> &x, std::vector<double> &grad, void *data){
-
-    UserData *udata = reinterpret_cast<UserData*>(data);
-    Eigen::MatrixXd H_true;
-    Eigen::VectorXd q(7);
-    Eigen::VectorXd dq(7);
-    Eigen::VectorXd ddq(7);
-    int l;
-	double t;
-	int count;
-
-    H_true.resize(10,70);
-    l = udata->l;
-    t = udata->t;
-	count = udata->count;
-	q_c << 0.0, 0.0, 0.0, -1.5708, 0.0, 1.8675, 0.0;
-
-	// if (!grad.empty()) {
-    //     for (int i = 0; i < NJ; i++) {
-    //         grad[i] = 0.0;
-    //     }
-    // }
-
-	/*Traiettoria sinusoidale ottima*/
-    for(int i = 0; i < NJ; ++i){
-            q(i) = q_c(i) + 0.30*sin(x[i]*t);     
-            dq(i) = x[i]*0.30*cos(x[i]*t);
-            ddq(i) = -x[i]*x[i]*0.30*sin(x[i]*t);      
-    }
-    
-    for(int i=0; i<70; ++i){
-        H_true.block(0,i,PARAM,1) << udata->H[i*PARAM], udata->H[i*PARAM+1], udata->H[i*PARAM+2], udata->H[i*PARAM+3], udata->H[i*PARAM+4], udata->H[i*PARAM+5], udata->H[i*PARAM+6], udata->H[i*PARAM+7], udata->H[i*PARAM+8], udata->H[i*PARAM+9];
-    }
+Eigen::Affine3d computeT0EE(const Eigen::VectorXd& q){
 	
-    fastRegMat.setArguments(q, dq, dq, ddq);
-    Eigen::Matrix<double, NJ,PARAM*NJ> Y = fastRegMat.getReg();
-    Eigen::Matrix<double, NJ,PARAM> redY = Y.block(0,(NJ-1)*PARAM,NJ,PARAM);
+	Eigen::Matrix<double, NJ, 4> DH; // matrice D-H
+	Eigen::Affine3d T0i = Eigen::Affine3d::Identity();
+	Eigen::Affine3d T0n; 
+	Eigen::Matrix<double, 4, 4> T = Eigen::Matrix<double, 4, 4>::Identity();
 
-    return redStackCompute(redY, H_true, l);
+	// Riempio sezione distanza "a"
+	DH.block(0,0,NJ,1) << 0, 0, 0,0.0825, -0.0825, 0, 0.088;   
+	// Riempio sezione angolo "alpha"
+	DH.block(0,1,NJ,1) << 0, -M_PI_2, M_PI_2, M_PI_2, -M_PI_2, M_PI_2, M_PI_2;
+	// Riempio sezione distanza "d"
+	DH.block(0,2,NJ,1) << 0.3330, 0, 0.3160, 0, 0.384, 0, 0.107; // verificato che questi valori corrispondono a DH che usa il robot in simulazione
+	// Riempio sezione angolo giunto "theta"
+	DH.block(0,3,NJ,1) = q;     
+
+	for (int i = 0; i < NJ; ++i)
+	{
+		double a_i = DH(i,0);
+		double alpha_i = DH(i,1);
+		double d_i = DH(i,2);
+		double q_i = DH(i,3);
+
+		T << cos(q_i), -sin(q_i), 0, a_i,
+			sin(q_i)*cos(alpha_i), cos(q_i)*cos(alpha_i), -sin(alpha_i), -sin(alpha_i)*d_i,
+			sin(q_i)*sin(alpha_i), cos(q_i)*sin(alpha_i), cos(alpha_i), cos(alpha_i)*d_i,
+			0, 0, 0, 1;
+
+		// Avanzamento perice i 
+		T0i.matrix() = T0i.matrix()*T;
+	}
+	T0n = T0i;
+	/*If EE system differs from frame n(Like frame hand true robot)*/
+	Eigen::Affine3d TnEE;
+	Eigen::Vector3d dnEE;
+	dnEE << 0.13, 0 , 0.035;
+	T0n.translation() = T0i.translation() + T0i.linear()*dnEE;    
+	
+	return T0n;
 }
-
-double redStackCompute(const Eigen::Matrix<double, NJ, PARAM>& red_Y, Eigen::MatrixXd& H,int& l){
-    const int P = 10;
-    const double epsilon = 0.1;
-    double Vmax;
-
-    if (l <= (P-1)){
-        if ((red_Y.transpose()-H.block(0,l*NJ,P,NJ)).norm()/(red_Y.transpose()).norm() >= epsilon){
-            H.block(0,l*NJ,P,NJ) = red_Y.transpose();
-            Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_V(H*H.transpose());
-            double V_max = (solver_V.singularValues()).minCoeff();
-        }
-                            
-    }else{
-        if ((red_Y.transpose()-H.block(0,(P-1)*NJ,P,NJ)).norm()/(red_Y.transpose()).norm() >= epsilon){
-            Eigen::MatrixXd Th = H;
-            
-            Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_V(H*H.transpose());
-            double V = (solver_V.singularValues()).minCoeff();
-
-            Eigen::VectorXd S(P);
-            for (int i = 0; i < P; ++i) {
-                H.block(0,i*NJ,P,NJ) = red_Y.transpose();
-                Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_S(H*H.transpose());
-                S(i) = (solver_S.singularValues()).minCoeff();
-                H = Th;
-            }
-            Vmax = S.maxCoeff();
-            Eigen::Index m; //index max eigvalues 
-            S.maxCoeff(&m);
-            
-
-            if(Vmax >= V){
-                H.block(0,m*NJ,P,NJ) = red_Y.transpose();
-            }else{
-                Vmax = V;
-            }
-        }
-    }
-	Eigen::JacobiSVD<Eigen::Matrix<double, PARAM, PARAM>> solver_cond(H*H.transpose());
-	double lmax = (solver_cond.singularValues()).maxCoeff();
-    return (lmax/Vmax);
-	// return -Vmax;
-}
-
-    Eigen::Affine3d computeT0EE(const Eigen::VectorXd& q){
-       
-        Eigen::Matrix<double, NJ, 4> DH; // matrice D-H
-        Eigen::Affine3d T0i = Eigen::Affine3d::Identity();
-        Eigen::Affine3d T0n; 
-        Eigen::Matrix<double, 4, 4> T = Eigen::Matrix<double, 4, 4>::Identity();
-
-        // Riempio sezione distanza "a"
-        DH.block(0,0,NJ,1) << 0, 0, 0,0.0825, -0.0825, 0, 0.088;   
-        // Riempio sezione angolo "alpha"
-        DH.block(0,1,NJ,1) << 0, -M_PI_2, M_PI_2, M_PI_2, -M_PI_2, M_PI_2, M_PI_2;
-        // Riempio sezione distanza "d"
-        DH.block(0,2,NJ,1) << 0.3330, 0, 0.3160, 0, 0.384, 0, 0.107; // verificato che questi valori corrispondono a DH che usa il robot in simulazione
-        // Riempio sezione angolo giunto "theta"
-        DH.block(0,3,NJ,1) = q;     
-
-        for (int i = 0; i < NJ; ++i)
-        {
-            double a_i = DH(i,0);
-            double alpha_i = DH(i,1);
-            double d_i = DH(i,2);
-            double q_i = DH(i,3);
-
-            T << cos(q_i), -sin(q_i), 0, a_i,
-                sin(q_i)*cos(alpha_i), cos(q_i)*cos(alpha_i), -sin(alpha_i), -sin(alpha_i)*d_i,
-                sin(q_i)*sin(alpha_i), cos(q_i)*sin(alpha_i), cos(alpha_i), cos(alpha_i)*d_i,
-                0, 0, 0, 1;
-
-            // Avanzamento perice i 
-            T0i.matrix() = T0i.matrix()*T;
-        }
-        T0n = T0i;
-        /*If EE system differs from frame n(Like frame hand true robot)*/
-        Eigen::Affine3d TnEE;
-        Eigen::Vector3d dnEE;
-        dnEE << 0.13, 0 , 0.035;
-        T0n.translation() = T0i.translation() + T0i.linear()*dnEE;    
-        
-        return T0n;
-    }
 
 
 int main(int argc, char **argv)
@@ -520,8 +402,6 @@ int main(int argc, char **argv)
 	// ros::Publisher pub_traj = node_handle.advertise<panda_controllers::Commands>(robot_name + "/computed_torque_controller/command", 1000);
 	ros::Subscriber sub_joints =  node_handle.subscribe<sensor_msgs::JointState>(robot_name + "/franka_state_controller/joint_states", 1, &jointsCallback);
 	ros::Subscriber sub_franka = node_handle.subscribe<franka_msgs::FrankaState>(robot_name + "/franka_state_controller/franka_states", 1, &frankaCallback);
-	ros::Subscriber sub_config_opt = node_handle.subscribe<panda_controllers::udata>("/CT_mod_controller_OS/opt_data", 1, &udataCallback);
-	// ros::Subscriber sub_config_opt = node_handle.subscribe<panda_controllers::udata>("/computed_torque_mod_controller/opt_data", 1, &udataCallback);
 	// ros::Subscriber sub_pose =  node_handle.subscribe("/franka_state_controller/franka_ee_pose", 1, &poseCallback);
 	pub_hand_qbh1 = node_handle.advertise<trajectory_msgs::JointTrajectory>("/robot/gripper/qbhand1/control/qbhand1_synergy_trajectory_controller/command", 1);
 	pub_hand_qbh2 = node_handle.advertise<trajectory_msgs::JointTrajectory>("/robot/gripper/qbhand2m1/control/qbhand2m1_synergies_trajectory_controller/command", 1);
@@ -529,28 +409,28 @@ int main(int argc, char **argv)
 	ros::Publisher pub_error = node_handle.advertise<franka_msgs::ErrorRecoveryActionGoal>(robot_name + "/franka_control/error_recovery/goal", 1);
 	ros::Publisher pub_traj_cartesian = node_handle.advertise<panda_controllers::desTrajEE>("/CT_mod_controller_OS/command_cartesian", 1);
 	ros::Publisher pub_rpy = node_handle.advertise<panda_controllers::rpy>("/CT_mod_controller_OS/command_rpy", 1);
-	ros::Publisher pub_cmd_opt = node_handle.advertise<sensor_msgs::JointState>("/CT_mod_controller_OS/command_joints_opt", 1);
+	ros::Publisher pub_cmd_joints_CT = node_handle.advertise<sensor_msgs::JointState>("/CT_mod_controller_OS/command_joints", 1);
 	ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/adaptiveFlag", 1);
 	ros::Publisher pub_impedanceGains = node_handle.advertise<panda_controllers::impedanceGain>("/CT_mod_controller_OS/impedanceGains", 1);
-	// ros::Publisher pub_cmd_opt = node_handle.advertise<sensor_msgs::JointState>("/computed_torque_mod_controller/command_joints_opt", 1);
+	ros::Publisher pub_cmd_joints = node_handle.advertise<sensor_msgs::JointState>("/computed_torque_mod_controller/command_joints", 1);
 	// ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/computed_torque_mod_controller/adaptiveFlag", 1);
-	ros::Publisher pub_flag_opt = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/optFlag", 1);
+	ros::Publisher pub_flag_joints = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/jointsFlag", 1);
 	ros::Publisher pub_flag_resetAdp = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/resetFlag", 1);
 
 	// ----- Messages ----- //
 	panda_controllers::flag adaptive_flag_msg;
-	panda_controllers::flag opt_flag_msg;
+	panda_controllers::flag joints_flag_msg;
 	panda_controllers::flag newAdp_flag_msg;
 	panda_controllers::desTrajEE traj_msg;
 	panda_controllers::rpy rpy_msg;
 	panda_controllers::impedanceGain gains_msg;
-	sensor_msgs::JointState traj_opt_msg;
+	sensor_msgs::JointState traj_joints_msg;
 
 	/*Resizie*/
-	opt_flag_msg.flag = false;
-	traj_opt_msg.position.resize(NJ);
-    traj_opt_msg.velocity.resize(NJ);
-    traj_opt_msg.effort.resize(NJ);
+	joints_flag_msg.flag = false;
+	traj_joints_msg.position.resize(NJ);
+    traj_joints_msg.velocity.resize(NJ);
+    traj_joints_msg.effort.resize(NJ);
 
 	srand(time(NULL));
 	bool first_time = true;
@@ -638,15 +518,15 @@ int main(int argc, char **argv)
 	// Kv << 30, 30, 30, 2, 2, 2;
 
 	/* Inizializzazione grandezze ottimo, ub e lb scelti per non sforare i limiti ed evitare la saturazione*/
-	udata.H.resize(700);
-	std::vector<double> lb(7), ub(7);
-	std::vector<double> x(7), x_old(7);
-	lb[0] = -M_PI_4; lb[1] = -M_PI_2; lb[2] = -M_PI_4; lb[3] = -M_PI_4; lb[4] = -M_PI_4; lb[5] = -M_PI_4; lb[6] = -M_PI_2;
-	ub[0] = M_PI_4; ub[1] = M_PI_2; ub[2] = M_PI_4; ub[3] = M_PI_4; ub[4] = M_PI_4; ub[5] = M_PI_4; ub[6] = M_PI_2;
+	// udata.H.resize(700);
+	// std::vector<double> lb(7), ub(7);
+	// std::vector<double> x(7), x_old(7);
+	// lb[0] = -M_PI_4; lb[1] = -M_PI_2; lb[2] = -M_PI_4; lb[3] = -M_PI_4; lb[4] = -M_PI_4; lb[5] = -M_PI_4; lb[6] = -M_PI_2;
+	// ub[0] = M_PI_4; ub[1] = M_PI_2; ub[2] = M_PI_4; ub[3] = M_PI_4; ub[4] = M_PI_4; ub[5] = M_PI_4; ub[6] = M_PI_2;
 
-	for(int i=0; i < 7; ++i){
-		x_old[i] = 0;
-	}
+	// for(int i=0; i < 7; ++i){
+	// 	x_old[i] = 0;
+	// }
 
 	while (ros::ok()){
 		if (executing == 0){
@@ -710,7 +590,7 @@ int main(int argc, char **argv)
 						p_end = p0_pick;
 						rpy_end = rpy0_pick;
 						tf = tf + 2;
-						// opt_flag_msg.flag = true;
+						// joints_flag_msg.flag = true;
 						// q_end = q0_throw;
 						// joint_move = true;
 						// rpy_end = rpy_start+rpy_com;
@@ -725,7 +605,7 @@ int main(int argc, char **argv)
 						p_end = pf_throw;
 						rpy_end = rpyf_throw;
 					} else if (choice_2 == 4) {
-						opt_flag_msg.flag = true;
+						joints_flag_msg.flag = true;
 						q_end = q_saved;
 						joint_move = true;
 					} else if (choice_2 == 5) {
@@ -778,7 +658,7 @@ int main(int argc, char **argv)
 				// pub_impedanceGains.publish(gains_msg);
 			}else if (choice == 5){
 				// --- estimate --- //
-				cout<<"estimation type:   (1: lissajous,  2: throw,  3:traj_opt,  0: cancel) "<<endl;
+				cout<<"estimation type:   (1: lissajous,  2: throw,    0: cancel) "<<endl;
 				cin>>choice_2;
 				if (choice_2 == 1){
 					// trajectory center
@@ -823,11 +703,6 @@ int main(int argc, char **argv)
 					// 	gains_msg.damping[i] = Kv(i);
 					// }
 					// pub_impedanceGains.publish(gains_msg);
-				} else if (choice_2 == 3){
-					opt_flag_msg.flag = true;
-					joint_move = true;
-					executing = 5;
-					tf = tf_est + 1.0;
 				}
 			}else if (choice == 6){
 				cout<<"adaptive:   (0: disable,  1: enable,     other: cancel) "<<endl;
@@ -1014,82 +889,18 @@ int main(int argc, char **argv)
 						traj_cartesian.vel = zero;
 						traj_cartesian.acc = zero;
 					}
-				}else if (executing == 5){
-					
-					for(int i=0; i < 7; ++i){
-						x[i] = x_old[i];
-					}
-					traj_joints_old = traj_joints;
-					
-					if (counter%10 == 0){
-                        // count = 0;
-                        ros::spinOnce();
-                        for(int i = 0; i < 700; ++i){
-                            udata.H[i] = H_vec(i);
-                        }
-                    // double t = (ros::Time::now() - t_init).toSec();
-                        udata.t = t;
-                        udata.l = l_counter;
-                        nlopt::opt opt(nlopt::algorithm::LN_COBYLA, NJ);
-						double minf;
-
-                        opt.set_xtol_rel(1e-4);
-                        opt.set_lower_bounds(lb); // setto limite inferiore
-                        opt.set_upper_bounds(ub); // setto limite superiore 
-                        opt.set_min_objective(objective, &udata);  // definisco costo da massimizzare
-                    
-
-                        // Ottimizzazione
-						// if(!smooth_flag){
-						nlopt::result result = opt.optimize(x, minf);
-					
-						for(int i=0; i < 7; ++i){
-							x_old[i] = x[i];
-						}
-				
-						for(int i = 0; i < 7; ++i){
-							traj_joints.pos(i) = q_c(i) + 0.30*sin(x[i]*t);     
-							traj_joints.vel(i) = x[i]*0.30*cos(x[i]*t);
-							traj_joints.acc(i) = -x[i]*x[i]*0.30*sin(x[i]*t);      
-						}
-						// }	
-						// t_smooth = t + 0.010;
-						// cout << t_smooth <<endl;
-						// cout << traj_joints.pos <<endl;
-						// cout << traj_joints_old.pos <<endl;
-					}
-					/*Parte di smoothing ai giunti*/
-					// traj_joints = interpolator_joints(traj_joints_old.pos, traj_joints_old.vel, traj_joints_old.acc, traj_joints.pos, traj_joints.vel, traj_joints.acc, t_smooth, t);
-					// if(t <= 1.0+t_smooth){
-					// 	traj_joints = interpolator_joints(traj_joints_old.pos, traj_joints_old.vel, traj_joints_old.acc, traj_joints.pos, traj_joints.vel, traj_joints.acc, 1.0+t_smooth, t);
-					// }else{
-						// for(int i = 0; i < 7; ++i){
-						// 	traj_joints.pos(i) = q_c(i) + 0.30*sin(x[i]*t);     
-						// 	traj_joints.vel(i) = x[i]*0.30*cos(x[i]*t);
-						// 	traj_joints.acc(i) = -x[i]*x[i]*0.30*sin(x[i]*t);      
-						// 	smooth_flag = false;
-						// }
-					// 	t_smooth = t;
-					// }
-					/*Traiettoria ottima sinusoidale ottenuta*/
-                    for(int i = 0; i < 7; ++i){
-                        traj_joints.pos(i) = q_c(i) + 0.30*sin(x[i]*t);     
-                        traj_joints.vel(i) = x[i]*0.30*cos(x[i]*t);
-                        traj_joints.acc(i) = -x[i]*x[i]*0.30*sin(x[i]*t);      
-                    }
-                    // count = count+1;
 				}
 
 				// ----- publishing ----- //
-				if (opt_flag_msg.flag){
+				if (joints_flag_msg.flag){
 					// cout << "traj:"<< traj_joints.pos;
 					for(int i=0;i<NJ;i++){
-						traj_opt_msg.header.stamp = ros::Time::now();
-						traj_opt_msg.position[i] = traj_joints.pos(i);
-						traj_opt_msg.velocity[i] = traj_joints.vel(i);
-						traj_opt_msg.effort[i] = traj_joints.acc(i);
+						traj_joints_msg.header.stamp = ros::Time::now();
+						traj_joints_msg.position[i] = traj_joints.pos(i);
+						traj_joints_msg.velocity[i] = traj_joints.vel(i);
+						traj_joints_msg.effort[i] = traj_joints.acc(i);
 					}
-					pub_cmd_opt.publish(traj_opt_msg);
+					pub_cmd_joints_CT.publish(traj_joints_msg);
 					
 				}else{	
 					traj_msg.header.stamp = ros::Time::now();
@@ -1117,9 +928,9 @@ int main(int argc, char **argv)
 				}	
 				loop_rate.sleep();
 				t = (ros::Time::now() - t_init).toSec();
-				pub_flag_opt.publish(opt_flag_msg);
+				pub_flag_joints.publish(joints_flag_msg);
 			}
-			if (opt_flag_msg.flag){
+			if (joints_flag_msg.flag){
 				/*Command to stay*/
 				ros::spinOnce();
 				Eigen::Vector3d p_fin = (computeT0EE(q)).translation();
@@ -1137,8 +948,8 @@ int main(int argc, char **argv)
 			// p_com.setZero();
 			// rpy_com.setZero();
 			executing = 0;
-			opt_flag_msg.flag = false;
-			pub_flag_opt.publish(opt_flag_msg);
+			joints_flag_msg.flag = false;
+			pub_flag_joints.publish(joints_flag_msg);
 			// reset first_time
 			first_time = true;
 

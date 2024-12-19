@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include <math.h>
-#include <nlopt.hpp>
 #include <Eigen/Dense>
 
 #include <controller_interface/multi_interface_controller.h>
@@ -30,7 +29,6 @@
 #include "panda_controllers/log_adaptive_cartesian.h"
 #include "panda_controllers/flag.h"
 #include "panda_controllers/rpy.h"
-#include "panda_controllers/udata.h"
 #include "panda_controllers/impedanceGain.h"
 
 // #include "utils/ThunderPanda.h"
@@ -72,23 +70,10 @@ public:
     void stopping(const ros::Time&);
     void update(const ros::Time&, const ros::Duration& period);
 
-    // struct UserData {
-    //     std::vector<double> q;
-    //     std::vector<double> dq;
-    //     // std::vector<std::vector<double>> H;
-    //     std::vector<double> H;
-    //     int l;
-    //     // CTModOS* instance;
-    // };
-
-    // double objective(const std::vector<double> &x, std::vector<double> &grad);
-    // void solveOptimizationProblem(const UserData &udata);
-
 private:
 
     bool flag = true;           // flag for check of the desired command velocity    
     double dt;
-    int l;
     int t;
     int count; 
     double lambda_min;
@@ -137,7 +122,7 @@ private:
     Eigen::Matrix<double, NJ*(PARAM+FRICTION), NJ*(PARAM+FRICTION)> Rinv_tot;
     Eigen::Matrix<double, NJ*(FRICTION), NJ*(FRICTION)> Rinv_fric;
     bool update_param_flag;
-    bool update_opt_flag;
+    bool update_joints_flag;
     bool reset_adp_flag;
 
 
@@ -162,9 +147,9 @@ private:
     Eigen::Matrix<double, NJ, 1> ddot_qr_est;
 
     /*Variabili di ottimo*/
-    Eigen::Matrix<double, NJ, 1> ddq_opt;
-    Eigen::Matrix<double, NJ, 1> dq_opt;
-    Eigen::Matrix<double, NJ, 1> q_opt;
+    // Eigen::Matrix<double, NJ, 1> ddq_joints;
+    // Eigen::Matrix<double, NJ, 1> dq_joints;
+    // Eigen::Matrix<double, NJ, 1> q_joints;
 
     /*Inf variable*/
     // double inf1;
@@ -180,7 +165,7 @@ private:
 
     Eigen::Matrix<double, NJ, 1> tau_cmd;
     Eigen::Matrix<double, NJ, 1> tau_J;
-    Eigen::Matrix<double, NJ, 1> redtau_J;
+    // Eigen::Matrix<double, NJ, 1> redtau_J;
 
     Eigen::Matrix<double, DOF, 1> F_ext; 
     Eigen::Matrix<double, DOF, 1> F_cont; 
@@ -259,16 +244,6 @@ private:
     Eigen::Matrix<double, NJ, NJ*(PARAM+FRICTION)> Y_mod_tot;
     Eigen::Matrix<double, NJ, NJ*PARAM> Y_norm;
     Eigen::Matrix<double, NJ, NJ*PARAM> Y_norm_pred;
-    Eigen::Matrix<double, NJ, PARAM> redY_norm;
-    Eigen::VectorXd redY_norm_vec;
-    Eigen::MatrixXd H; // Memory stack
-    // Eigen::MatrixXd H_old;
-    Eigen::VectorXd H_vec; // utile per passare dati a problema di ottimo
-    Eigen::VectorXd E; // Memory stack
-    // Eigen::VectorXd E_old;
-    Eigen::Matrix<double, NJ*PARAM, 1> Y_stack_sum;
-    Eigen::Matrix<double, PARAM, 1> redY_stack_sum;
-    Eigen::Matrix<double, 14, 1> redY_stack_sum_fric;
     Eigen::Matrix<double, NJ, NJ*FRICTION> Y_D;
     Eigen::Matrix<double, NJ, NJ*FRICTION> Y_D_norm;
 	
@@ -284,20 +259,9 @@ private:
     
   
     /*Stack function calculation*/
-    Eigen::VectorXd S;
-    Eigen::Matrix<double, NJ, 1> red_tau_J;
-    Eigen::Matrix<double, NJ, PARAM> red_Y;
+    // Eigen::VectorXd S;
 
     thunder_ns::thunder_panda_2 fastRegMat;
-
-    /*Data Struct from optimal problem*/
-    // struct UserData {
-    //     std::vector<double> q;
-    //     std::vector<double> dq;
-    //     // std::vector<std::vector<double>> H;
-    //     std::vector<double> H;
-    //     int l;
-    // };
 
     /*Filter function*/
     void aggiungiDato(std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_, const Eigen::Matrix<double, NJ, 1>& dato_, int lunghezza_finestra_);
@@ -306,15 +270,6 @@ private:
     // Eigen::Matrix<double, DOF, 1> calcolaMediaXi(const std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_);
     
     double deltaCompute (double a);
-
-    /*Cost optimal problem*/
-    // double objective(const std::vector<double> &x, std::vector<double> &grad, void *data);
-
-    /* Fuction Stack building*/
-    // void stackCompute(const Eigen::Matrix<double, NJ, NJ*PARAM>& Y, Eigen::MatrixXd& H, int& l, const Eigen::Matrix<double, NJ, 1>& tau_J, Eigen::VectorXd& E);
-    double redStackCompute(const Eigen::Matrix<double, NJ, PARAM>& red_Y_new, Eigen::MatrixXd& H,int& l, const Eigen::Matrix<double, NJ, 1>& red_tau_J_new, Eigen::VectorXd& E);
-    // double redStackComputeFric(const Eigen::Matrix<double, NJ, NJ*FRICTION>& red_Y, Eigen::MatrixXd& H,int& l, const Eigen::Matrix<double, NJ, 1>& red_tau_J, Eigen::VectorXd& E);
-    // void redStackCompute(const Eigen::Matrix<double, NJ, PARAM>& red_Y, Eigen::MatrixXd& H,int& l);
 
     Eigen::Affine3d computeT0EE(const Eigen::VectorXd& q);
     
@@ -332,7 +287,7 @@ private:
     ros::Subscriber sub_command_;
     ros::Subscriber sub_command_j_;
     ros::Subscriber sub_command_rpy_;
-    ros::Subscriber sub_flag_opt_;
+    ros::Subscriber sub_flag_joints_;
     ros::Subscriber sub_impedance_gains_;
     ros::Subscriber sub_joints;
     ros::Subscriber sub_flag_resetAdp;
@@ -340,22 +295,22 @@ private:
     ros::Subscriber sub_Fext_;
     ros::Publisher pub_err_;
     ros::Publisher pub_config_;
-    ros::Publisher pub_opt_;
+    ros::Publisher pub_joints_;
 
     // SIGINT //
     void signal_callback_handler(int signum);
 
     /* Setting Command Callback*/
     void setCommandCB(const desTrajEE::ConstPtr& msg);
-    void setCommandCBJ(const sensor_msgs::JointStateConstPtr& msg);
-    void jointsCallbackT(const sensor_msgs::JointStateConstPtr& msg);
+    // void setCommandCBJ(const sensor_msgs::JointStateConstPtr& msg);
+    // void jointsCallbackT(const sensor_msgs::JointStateConstPtr& msg);
     void setGains(const impedanceGain::ConstPtr& msg);
     void setRPYcmd(const rpy::ConstPtr& msg);
     void callbackFext(const geometry_msgs::WrenchStamped::ConstPtr& msg);
 
     /*Setting Flag Callback*/
     void setFlagUpdate(const flag::ConstPtr& msg);
-    void setFlagOpt(const flag::ConstPtr& msg);
+    // void setFlagjoints(const flag::ConstPtr& msg);
     void setResetFlag(const flag::ConstPtr& msg);
 
     std::unique_ptr<franka_hw::FrankaStateHandle> state_handle_;
@@ -369,7 +324,7 @@ private:
 
 	panda_controllers::log_adaptive_cartesian msg_log;
     panda_controllers::point msg_config;
-    panda_controllers::udata msg_opt;
+    // panda_controllers::udata msg_joints;
 
 
 };

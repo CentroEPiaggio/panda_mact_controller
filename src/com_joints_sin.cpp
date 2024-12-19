@@ -42,15 +42,15 @@ int main(int argc, char **argv)
     double amp_2 = 0.60;
 
     /* Publisher */
-	ros::Publisher pub_des_jointState = node_handle.advertise<sensor_msgs::JointState>("/CT_mod_controller_OS/command_joints_opt", 1); 
-    ros::Publisher pub_flag_opt = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/optFlag", 1);
+	ros::Publisher pub_des_jointState = node_handle.advertise<sensor_msgs::JointState>("/CT_mod_controller_OS/command_joints_joints", 1); 
+    ros::Publisher pub_flag_joints = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/jointsFlag", 1);
 
 
     /* Subscriber */
 	ros::Subscriber sub_pose = node_handle.subscribe<panda_controllers::point>("current_config", 1, &poseCallback);
 
     sensor_msgs::JointState command;
-    panda_controllers::flag flag_opt;
+    panda_controllers::flag flag_joints;
     command.position.resize(NJ);
     command.velocity.resize(NJ);
     command.effort.resize(NJ);
@@ -87,9 +87,9 @@ int main(int argc, char **argv)
             command.velocity[i] = dot_qr(i);
             command.effort[i] = ddot_qr(i);
         }
-        flag_opt.flag = true;
+        flag_joints.flag = true;
 
-        pub_flag_opt.publish(flag_opt);
+        pub_flag_joints.publish(flag_joints);
         pub_des_jointState.publish(command);  
 		loop_rate.sleep();
 
