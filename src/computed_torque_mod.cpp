@@ -250,7 +250,19 @@ namespace panda_controllers{
         // fastRegMat.setInertialParam(param_dyn); // setta i parametri dinamici dell'oggetto fastRegMat e calcola una stima del regressore di M,C e G (che può differire da quella riportata dal franka)
         fastRegMat.set_inertial_REG(param);
         fastRegMat.setArguments(q_curr, dot_q_curr, command_dot_q_d, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
-    
+		// auto M = fastRegMat.getMass();
+		// auto C = fastRegMat.getCoriolis();
+		// auto G = fastRegMat.getGravity();
+		// auto Y = fastRegMat.getReg();
+	    // std::array<double, 49> mass_array = model_handle_->getMass();
+	    // std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
+    	// Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
+	    // Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
+	    // Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+		// auto err_model = Y*param - (M*command_dot_dot_q_d + C*command_dot_q_d + G);
+		// auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka*command_dot_q_d + G_franka);
+		// std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
+		// std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
     }
 
 
@@ -264,6 +276,26 @@ namespace panda_controllers{
 	    C = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
 	    G = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
 
+		/* Actual position and velocity of the joints */
+        T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data()); // matrice di trasformazione omogenea che mi fa passare da s.d.r base a s.d.r EE
+        q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.q.data());
+        dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
+
+		fastRegMat.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
+		M = fastRegMat.getMass();
+		C = fastRegMat.getCoriolis()*dot_q_curr;
+		G = fastRegMat.getGravity();
+		auto Y = fastRegMat.getReg();
+	    mass_array = model_handle_->getMass();
+	    coriolis_array = model_handle_->getCoriolis();
+    	Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
+	    Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
+	    Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+		auto err_model = Y*param - (M*command_dot_dot_q_d + C + G);
+		auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
+		std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
+		std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
+
     	/* =============================================================================== */
         /* check matrix per vedere le stime riprodotte seguendo il calcolo del regressore*/
         /*
@@ -274,13 +306,6 @@ namespace panda_controllers{
         */
        /* =============================================================================== */
       
-       /* Actual position and velocity of the joints */
-        T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data()); // matrice di trasformazione omogenea che mi fa passare da s.d.r base a s.d.r EE
-        q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.q.data());
-        dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
-
-        
-
     
         // q_est_old = q_est;
         // q_est = q_est + 0.9*(q_curr - q_est);
