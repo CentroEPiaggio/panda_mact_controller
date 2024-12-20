@@ -19,7 +19,7 @@
 #include <sstream>
 
 /*Libreria per ottimo*/
-#include "utils/thunder_panda_2.h"
+#include "utils/thunder_franka.h"
 #include "utils/utils_cartesian.h"
 
 // ROS Service and Message Includes
@@ -75,7 +75,7 @@ min_jerk_class min_jerk;
 double ampX, ampY, ampZ, freqX, freqY, freqZ, phiX, phiZ, offX, offY, offZ, liss_T;
 
 Eigen::Matrix<double, NJ,PARAM*NJ> Y;
-thunder_ns::thunder_panda_2 fastRegMat;
+thunder_franka frankaRobot;
 Eigen::Matrix<double, NJ, 1> q_c;
 
 ros::Publisher pub_hand_qbh1;

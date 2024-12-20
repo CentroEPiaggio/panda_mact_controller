@@ -240,10 +240,10 @@ extern "C" const casadi_int* franka_J_8_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_J_8_fun_sparsity_out(casadi_int i);
 extern "C" int franka_J_8_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_J_8_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_J_8_fun_SZ_ARG 1
+#define franka_J_8_fun_SZ_ARG 2
 #define franka_J_8_fun_SZ_RES 1
 #define franka_J_8_fun_SZ_IW 0
-#define franka_J_8_fun_SZ_W 58
+#define franka_J_8_fun_SZ_W 68
 extern "C" int franka_J_cm_1_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_J_cm_1_fun_alloc_mem(void);
 extern "C" int franka_J_cm_1_fun_init_mem(int mem);
@@ -408,10 +408,10 @@ extern "C" const casadi_int* franka_J_ee_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_J_ee_fun_sparsity_out(casadi_int i);
 extern "C" int franka_J_ee_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_J_ee_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_J_ee_fun_SZ_ARG 1
+#define franka_J_ee_fun_SZ_ARG 2
 #define franka_J_ee_fun_SZ_RES 1
 #define franka_J_ee_fun_SZ_IW 0
-#define franka_J_ee_fun_SZ_W 58
+#define franka_J_ee_fun_SZ_W 68
 extern "C" int franka_J_ee_dot_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_J_ee_dot_fun_alloc_mem(void);
 extern "C" int franka_J_ee_dot_fun_init_mem(int mem);
@@ -429,10 +429,10 @@ extern "C" const casadi_int* franka_J_ee_dot_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_J_ee_dot_fun_sparsity_out(casadi_int i);
 extern "C" int franka_J_ee_dot_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_J_ee_dot_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_J_ee_dot_fun_SZ_ARG 2
+#define franka_J_ee_dot_fun_SZ_ARG 3
 #define franka_J_ee_dot_fun_SZ_RES 1
 #define franka_J_ee_dot_fun_SZ_IW 0
-#define franka_J_ee_dot_fun_SZ_W 105
+#define franka_J_ee_dot_fun_SZ_W 137
 extern "C" int franka_J_ee_pinv_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_J_ee_pinv_fun_alloc_mem(void);
 extern "C" int franka_J_ee_pinv_fun_init_mem(int mem);
@@ -450,10 +450,10 @@ extern "C" const casadi_int* franka_J_ee_pinv_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_J_ee_pinv_fun_sparsity_out(casadi_int i);
 extern "C" int franka_J_ee_pinv_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_J_ee_pinv_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_J_ee_pinv_fun_SZ_ARG 1
+#define franka_J_ee_pinv_fun_SZ_ARG 2
 #define franka_J_ee_pinv_fun_SZ_RES 1
 #define franka_J_ee_pinv_fun_SZ_IW 0
-#define franka_J_ee_pinv_fun_SZ_W 94
+#define franka_J_ee_pinv_fun_SZ_W 98
 extern "C" int franka_M_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_M_fun_alloc_mem(void);
 extern "C" int franka_M_fun_init_mem(int mem);
@@ -681,10 +681,10 @@ extern "C" const casadi_int* franka_T_0_8_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_T_0_8_fun_sparsity_out(casadi_int i);
 extern "C" int franka_T_0_8_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_T_0_8_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_T_0_8_fun_SZ_ARG 1
+#define franka_T_0_8_fun_SZ_ARG 2
 #define franka_T_0_8_fun_SZ_RES 1
 #define franka_T_0_8_fun_SZ_IW 0
-#define franka_T_0_8_fun_SZ_W 52
+#define franka_T_0_8_fun_SZ_W 53
 extern "C" int franka_T_0_ee_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_T_0_ee_fun_alloc_mem(void);
 extern "C" int franka_T_0_ee_fun_init_mem(int mem);
@@ -702,10 +702,10 @@ extern "C" const casadi_int* franka_T_0_ee_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_T_0_ee_fun_sparsity_out(casadi_int i);
 extern "C" int franka_T_0_ee_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_T_0_ee_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_T_0_ee_fun_SZ_ARG 1
+#define franka_T_0_ee_fun_SZ_ARG 2
 #define franka_T_0_ee_fun_SZ_RES 1
 #define franka_T_0_ee_fun_SZ_IW 0
-#define franka_T_0_ee_fun_SZ_W 52
+#define franka_T_0_ee_fun_SZ_W 53
 extern "C" int franka_T_1_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_T_1_fun_alloc_mem(void);
 extern "C" int franka_T_1_fun_init_mem(int mem);
@@ -933,10 +933,10 @@ extern "C" const casadi_int* franka_reg_JTw_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_reg_JTw_fun_sparsity_out(casadi_int i);
 extern "C" int franka_reg_JTw_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_reg_JTw_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_reg_JTw_fun_SZ_ARG 2
+#define franka_reg_JTw_fun_SZ_ARG 3
 #define franka_reg_JTw_fun_SZ_RES 1
 #define franka_reg_JTw_fun_SZ_IW 0
-#define franka_reg_JTw_fun_SZ_W 0
+#define franka_reg_JTw_fun_SZ_W 56
 extern "C" int franka_reg_Jdq_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_reg_Jdq_fun_alloc_mem(void);
 extern "C" int franka_reg_Jdq_fun_init_mem(int mem);
@@ -954,10 +954,10 @@ extern "C" const casadi_int* franka_reg_Jdq_fun_sparsity_in(casadi_int i);
 extern "C" const casadi_int* franka_reg_Jdq_fun_sparsity_out(casadi_int i);
 extern "C" int franka_reg_Jdq_fun_work(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
 extern "C" int franka_reg_Jdq_fun_work_bytes(casadi_int *sz_arg, casadi_int* sz_res, casadi_int *sz_iw, casadi_int *sz_w);
-#define franka_reg_Jdq_fun_SZ_ARG 2
+#define franka_reg_Jdq_fun_SZ_ARG 3
 #define franka_reg_Jdq_fun_SZ_RES 1
 #define franka_reg_Jdq_fun_SZ_IW 0
-#define franka_reg_Jdq_fun_SZ_W 0
+#define franka_reg_Jdq_fun_SZ_W 52
 extern "C" int franka_reg_M_fun(const casadi_real** arg, casadi_real** res, casadi_int* iw, casadi_real* w, int mem);
 extern "C" int franka_reg_M_fun_alloc_mem(void);
 extern "C" int franka_reg_M_fun_init_mem(int mem);

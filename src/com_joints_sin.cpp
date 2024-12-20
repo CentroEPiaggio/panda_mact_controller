@@ -12,7 +12,7 @@
 #include "panda_controllers/desTrajEE.h"
 #include "panda_controllers/flag.h"
 
-#include "utils/ThunderPanda.h"
+// #include "utils/ThunderPanda.h"
 #include "utils/utils_cartesian.h"
 
 #define NJ 7

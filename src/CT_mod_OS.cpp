@@ -178,7 +178,7 @@ namespace panda_controllers{
 		// param_real << 0.73552200000000001, 0.0077354848739999999, -0.0031274395439999996, -0.033394905365999997, 0.01645526761273585, -0.00039510871831575201, -0.00084478578026577801, 0.011624582982752355, -0.00088299513761623202, 0.0049096519673609458;
 
 		/* Param_dyn initial calculation*/
-		fastRegMat.set_inertial_REG(param);
+		frankaRobot.set_par_REG(param);
 		
 		/* Inizializing the R gains to update parameters*/
 		std::vector<double> gainRlinks(NJ), gainRparam(3);
@@ -319,12 +319,12 @@ namespace panda_controllers{
 		dot_param.setZero();
 		dot_param_frict.setZero();
 
-		// fastRegMat.setInertialParams(param_dyn); // To compute Extimate Matrix M,G,C
-		fastRegMat.set_inertial_REG(param); 
-		fastRegMat.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr); // To compute jacobian and regressor
+		// frankaRobot.setInertialParams(param_dyn); // To compute Extimate Matrix M,G,C
+		frankaRobot.set_par_REG(param); 
+		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr); // To compute jacobian and regressor
 
 		// G = Eigen::Map<Eigen::Matrix<double, NJ, 1>> (model_handle_->getGravity().data());
-		// Gest = fastRegMat.getGravity(); // Estimate Gravity Matrix
+		// Gest = frankaRobot.get_G(); // Estimate Gravity Matrix
 		// cout<<"erroregravità: "<<Gest-G<<endl;
 
 	}
@@ -374,18 +374,18 @@ namespace panda_controllers{
 		tau_J = calcolaMedia(buffer_tau);
 	
 		/* Update pseudo-inverse of J and its derivative */
-		fastRegMat.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
+		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
 
 		/* Compute pseudo-inverse of J and its derivative */ 
 		// J = Eigen::Map<Eigen::Matrix<double, DOF, NJ>>(model_handle_->getZeroJacobian(franka::Frame::kEndEffector).data());
-		J = fastRegMat.getJac();
-		// ROS_INFO_STREAM(J -fastRegMat.getJac()); // Test thunderpanda for kinematics matrix
-		J_dot = fastRegMat.getDotJac();
-		J_pinv = fastRegMat.getPinvJac();
+		J = frankaRobot.get_J_ee();
+		// ROS_INFO_STREAM(J -frankaRobot.getJac()); // Test thunderpanda for kinematics matrix
+		Eigen::MatrixXd J_dot = frankaRobot.get_J_ee_dot();
+		Eigen::MatrixXd J_pinv = frankaRobot.get_J_ee_pinv();
 		// J_pinv = J.transpose()*((J*J.transpose()).inverse()); // Right pseudo-inverse of J
 		//J_T_pinv = J_pinv.transpose(); // Left pseudo-inverse of J'
 		J_T_pinv = ((J*J.transpose()).inverse())*J; // Left pseudo-inverse of J'
-		J_dot_pinv = fastRegMat.getDotPinvJac();
+		Eigen::MatrixXd J_dot_pinv = - J_pinv * J_dot * J_pinv;
 
 		/* NullSpace Calculation*/
 		N1 = (I7.setIdentity() - J_pinv*J);
@@ -456,10 +456,10 @@ namespace panda_controllers{
 		Kv_xi = Kv;
 
 		/* Update and Compute Regressor */
-		fastRegMat.setArguments(q_curr, dot_q_curr, dot_qr, ddot_qr);
-		Y_mod = fastRegMat.getReg(); // Regressor compute
-		fastRegMat.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
-		Y_norm = fastRegMat.getReg();
+		frankaRobot.setArguments(q_curr, dot_q_curr, dot_qr, ddot_qr);
+		Y_mod = frankaRobot.get_Yr(); // Regressor compute
+		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
+		Y_norm = frankaRobot.get_Yr();
 
 		err_param = Y_norm*param;
 		aggiungiDato(buffer_tau_d, err_param,6);
@@ -510,12 +510,12 @@ namespace panda_controllers{
 		}
 
 		/* update dynamic for control law(no filter action) */
-		fastRegMat.setArguments(q_curr, dot_q_curr_old, dot_q_curr_old, ddot_q_curr_old);
-		fastRegMat.set_inertial_REG(param); 
+		frankaRobot.setArguments(q_curr, dot_q_curr_old, dot_q_curr_old, ddot_q_curr_old);
+		frankaRobot.set_par_REG(param); 
 
-		Mest = fastRegMat.getMass(); // Estimate Mass Matrix
-		Cest = fastRegMat.getCoriolis(); // Estimate Coriollis Matrix
-		Gest = fastRegMat.getGravity(); // Estimate Gravity Matrix
+		Mest = frankaRobot.get_M(); // Estimate Mass Matrix
+		Cest = frankaRobot.get_C(); // Estimate Coriollis Matrix
+		Gest = frankaRobot.get_G(); // Estimate Gravity Matrix
 			   
 		/*Matrici nello spazio operativo*/
 		// MestXi = J_T_pinv*Mest*J_pinv;

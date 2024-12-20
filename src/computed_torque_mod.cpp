@@ -184,7 +184,7 @@ namespace panda_controllers{
         this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
 
         /* Initialize regressor object (oggetto thunderpanda) */
-        // fastRegMat.init(NJ);
+        // frankaRobot.init(NJ);
 
         return true;
     }
@@ -236,13 +236,13 @@ namespace panda_controllers{
         dot_param_frict.setZero();
         
         /* Update regressor */
-        // fastRegMat.setInertialParam(param_dyn); // setta i parametri dinamici dell'oggetto fastRegMat e calcola una stima del regressore di M,C e G (che può differire da quella riportata dal franka)
-        fastRegMat.set_inertial_REG(param);
-        fastRegMat.setArguments(q_curr, dot_q_curr, command_dot_q_d, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
-		// auto M = fastRegMat.getMass();
-		// auto C = fastRegMat.getCoriolis();
-		// auto G = fastRegMat.getGravity();
-		// auto Y = fastRegMat.getReg();
+        // frankaRobot.setInertialParam(param_dyn); // setta i parametri dinamici dell'oggetto frankaRobot e calcola una stima del regressore di M,C e G (che può differire da quella riportata dal franka)
+        frankaRobot.set_par_REG(param);
+        frankaRobot.setArguments(q_curr, dot_q_curr, command_dot_q_d, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
+		// auto M = frankaRobot.get_M();
+		// auto C = frankaRobot.get_C();
+		// auto G = frankaRobot.get_G();
+		// auto Y = frankaRobot.get_Yr();
 	    // std::array<double, 49> mass_array = model_handle_->getMass();
 	    // std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
     	// Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
@@ -270,11 +270,11 @@ namespace panda_controllers{
         q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.q.data());
         dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
 
-		fastRegMat.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
-		M = fastRegMat.getMass();
-		C = fastRegMat.getCoriolis()*dot_q_curr;
-		G = fastRegMat.getGravity();
-		auto Y = fastRegMat.getReg();
+		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
+		M = frankaRobot.get_M();
+		C = frankaRobot.get_C()*dot_q_curr;
+		G = frankaRobot.get_G();
+		auto Y = frankaRobot.get_Yr();
 	    mass_array = model_handle_->getMass();
 	    coriolis_array = model_handle_->getCoriolis();
     	Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
@@ -288,10 +288,10 @@ namespace panda_controllers{
     	/* =============================================================================== */
         /* check matrix per vedere le stime riprodotte seguendo il calcolo del regressore*/
         /*
-        fastRegMat.setArguments(q_curr,dot_q_curr,param_dyn);
-        Mest = fastRegMat.getMass_gen();
-        Cest = fastRegMat.getCoriolis_gen();
-        Gest = fastRegMat.getGravity_gen();
+        frankaRobot.setArguments(q_curr,dot_q_curr,param_dyn);
+        Mest = frankaRobot.get_M_gen();
+        Cest = frankaRobot.get_C_gen();
+        Gest = frankaRobot.get_G_gen();
         */
        /* =============================================================================== */
       
@@ -357,10 +357,10 @@ namespace panda_controllers{
         ddot_q_curr = calcolaMedia(buffer_ddq);
 
         /* Update and Compute Regressor mod e Regressor Classic*/
-	    fastRegMat.setArguments(q_curr, dot_q_curr, command_dot_q_d, command_dot_dot_q_d);
-	    Y_mod = fastRegMat.getReg(); // calcolo del regressore
-        fastRegMat.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
-        Y_norm = fastRegMat.getReg();
+	    frankaRobot.setArguments(q_curr, dot_q_curr, command_dot_q_d, command_dot_dot_q_d);
+	    Y_mod = frankaRobot.get_Yr(); // calcolo del regressore
+        frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
+        Y_norm = frankaRobot.get_Yr();
         // ROS_INFO_STREAM(Y_norm.transpose());
         // redY_norm = Y_norm.block(0,(NJ-1)*PARAM,NJ,PARAM);
 
@@ -409,10 +409,10 @@ namespace panda_controllers{
 
         /* update dynamic for control law */
         // thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);	// conversion of updated parameters, nuovo oggetto thunderpsnda
-        fastRegMat.set_inertial_REG(param); // capire se usare questa variante si setArguments è la stessa cosa
-        Mest = fastRegMat.getMass(); // matrice di massa stimata usando regressore
-        Cest = fastRegMat.getCoriolis(); // matrice di coriolis stimata usando regressore
-        Gest = fastRegMat.getGravity(); // modello di gravità stimata usando regressore
+        frankaRobot.set_par_REG(param); // capire se usare questa variante si setArguments è la stessa cosa
+        Mest = frankaRobot.get_M(); // matrice di massa stimata usando regressore
+        Cest = frankaRobot.get_C(); // matrice di coriolis stimata usando regressore
+        Gest = frankaRobot.get_G(); // modello di gravità stimata usando regressore
 
         /* command torque to joint */
         tau_cmd = Mest * command_dot_dot_q_d + Cest * command_dot_q_d  + Kp_apix * error + Kv_apix * dot_error + Gest;// + Dest*command_dot_q_d; // perchè si sottrae G a legge controllo standard?  legge controllo computed torque (usare M,C e G dovrebbe essere la stessa cosa)

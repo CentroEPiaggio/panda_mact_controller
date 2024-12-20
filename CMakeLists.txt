@@ -96,8 +96,8 @@ add_library(${PROJECT_NAME}
 	#src/cartesian_impedance_controller_softbots.cpp #CartesianImpendanceSoftBots controller
 	# src/gen_regr_fun.cpp
 	# src/ThunderPanda.cpp
-	src/panda_2_gen.cpp
-	src/thunder_panda_2.cpp
+	src/franka_gen.cpp
+	src/thunder_franka.cpp
 )
 
 add_dependencies(${PROJECT_NAME}
@@ -118,9 +118,9 @@ add_dependencies(command_cartesian
 )
 # add_executable(CLIK_node
 # 	src/CLIK_node.cpp
-# 	src/thunder_panda_2.cpp
+# 	src/thunder_franka.cpp
 # 	# src/gen_regr_fun.cpp
-# 	src/panda_2_gen.cpp
+# 	src/franka_gen.cpp
 # )
 # target_link_libraries(CLIK_node
 # 	${catkin_LIBRARIES}
@@ -162,22 +162,6 @@ add_dependencies(com_joints_sin_node
 	${catkin_EXPORTED_TARGETS}
 )
 
-# add_executable(command_opt
-# 	src/command_opt.cpp
-# 	src/thunder_panda_2.cpp
-# 	# src/gen_regr_fun.cpp
-# 	src/panda_2_gen.cpp
-# )
-# target_link_libraries(command_opt
-# 	${catkin_LIBRARIES}
-# 	${NLOPT_LIBRARIES}
-# 	yaml-cpp
-# )
-# add_dependencies(command_opt
-# 	${${PROJECT_NAME}_EXPORTED_TARGETS} 
-# 	${catkin_EXPORTED_TARGETS}
-# )
-
 # add_executable(close_hand_node 
 # 	src/close_hand_node.cpp
 # )
@@ -185,9 +169,8 @@ add_dependencies(com_joints_sin_node
 add_executable(adaptive_throw
  	src/adaptive_throw.cpp
 	src/min_jerk.cpp
-	src/thunder_panda_2.cpp
-	# src/gen_regr_fun.cpp
-	src/panda_2_gen.cpp
+	src/thunder_franka.cpp
+	src/franka_gen.cpp
 )
 
 target_link_libraries(adaptive_throw 

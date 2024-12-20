@@ -29,7 +29,7 @@
 #include "panda_controllers/flag.h"
 
 // #include "utils/ThunderPanda.h"
-#include "utils/thunder_panda_2.h"
+#include "utils/thunder_franka.h"
 #include "utils/utils_cartesian.h"
 
 #define     DEBUG   0      
@@ -63,29 +63,24 @@ private:
     const double UB_s = 1;
     
     /* Definig the timing */
-    
     double dt;
     ros::Time time_now;
 
     /* Robot state handle */
-
     franka::RobotState robot_state;
     
     /* Franka ROS matrices */
-
     Eigen::Matrix<double, 6, NJ> jacobian;
 	Eigen::Affine3d T0EE;
     Eigen::Matrix<double, NJ, 1> rosG;
 
     // Joint (torque, velocity) limits vector [Nm], from datasheet https://frankaemika.github.io/docs/control_parameters.html
-    
     Eigen::Matrix<double, NJ, 1> tau_limit;
     Eigen::Matrix<double, NJ, 1> q_min_limit;
     Eigen::Matrix<double, NJ, 1> q_max_limit;
     Eigen::Matrix<double, NJ, 1> q_dot_limit;
     
     /* Gain Matrices */
-    
     Eigen::Matrix<double, 6, 6> Lambda; 
     Eigen::Matrix<double, NJ, NJ> Kd;
     //Eigen::Matrix<double, NJ*PARAM, NJ*PARAM> R;
@@ -94,7 +89,6 @@ private:
     bool UB_s_flag;
 
     /* Defining q_current, dot_q_current, s and tau_cmd */
-
     Eigen::Matrix<double, NJ, 1> q_curr;
     Eigen::Matrix<double, NJ, 1> dot_q_curr;
     Eigen::Matrix<double, NJ, 1> dot_qr;
@@ -104,43 +98,31 @@ private:
     Eigen::Matrix<double, NJ, 1> tau_tilde;
     
     /* Error and dot error feedback */
-    
     Eigen::Matrix<double, 6, 1> error;
     Eigen::Matrix<double, 6, 1> dot_error;
 
     /* Used for saving the last command position and command velocity, and old values to calculate the estimation */
-    
     Eigen::Matrix<double, 3, 1> ee_pos_cmd;             // desired command position 
     Eigen::Matrix<double, 3, 1> ee_vel_cmd;             // desired command velocity 
     Eigen::Matrix<double, 3, 1> ee_acc_cmd;             // desired command acceleration 
     
-    //Eigen::Matrix<double, 3, 1> ee_ang_cmd;             // desired command position
+    //Eigen::Matrix<double, 3, 1> ee_ang_cmd;           // desired command position
     Eigen::Matrix<double, 3, 3> ee_rot_cmd;             // desired command position
     Eigen::Matrix<double, 3, 1> ee_ang_vel_cmd;         // desired command velocity 
     Eigen::Matrix<double, 3, 1> ee_ang_acc_cmd;         // desired command acceleration 
 
     /* Parameter vector */
-
     Eigen::Matrix<double, NJ*PARAM, 1> param;
     Eigen::Matrix<double, NJ*PARAM, 1> param_init;
-    
     Eigen::Matrix<double, NJ*PARAM, 1> dot_param;
 
     /* Regressor Matrix */
-    
     Eigen::Matrix<double, NJ, NJ*PARAM> Yr;
-	
-	/* Pseudo-inverse of jacobian and its derivative matrices */
-	
-	Eigen::Matrix<double,NJ,6> mypJacEE;
-	Eigen::Matrix<double,NJ,6> mydot_pJacEE;
 
     /* Object Regressor Slotine Li*/
-
-    thunder_ns::thunder_panda_2 fastRegMat;
+    thunder_franka frankaRobot;
 
     /* Check the effort limits */
-    
     Eigen::Matrix<double, NJ, 1> saturateTorqueRate (
         const Eigen::Matrix<double, NJ, 1>& tau_d_calculated,
         const Eigen::Matrix<double, NJ, 1>& tau_J_d);
@@ -148,11 +130,9 @@ private:
     Eigen::Matrix<double, NJ, 1> tau_J_d;
 
     /* Import parameters */
-
     static constexpr double kDeltaTauMax {1.0};
     
     /* ROS variables */
-    
     ros::NodeHandle cvc_nh;
     ros::Subscriber sub_command_;
     ros::Subscriber sub_flag_update_;
@@ -160,7 +140,6 @@ private:
     ros::Publisher pub_config_;
 
     /* Setting Command Callback*/
-    
     void setCommandCB(const desTrajEE::ConstPtr& msg);
 
     /*Setting Flag Callback*/
@@ -171,7 +150,6 @@ private:
     std::vector<hardware_interface::JointHandle> joint_handles_;
 
     /* Message */
-    
     template <size_t N>
     void fillMsg(boost::array<double, N>& msg_, const Eigen::VectorXd& data_);
     void fillMsgLink(panda_controllers::link_params &msg_, const Eigen::VectorXd& data_);

@@ -142,7 +142,7 @@ bool Backstepping::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& 
 	
 	/* Initialize regressor object */
 
-	// fastRegMat.init(NJ);
+	// frankaRobot.init(NJ);
 	
 	return true;
 }
@@ -180,7 +180,7 @@ void Backstepping::starting(const ros::Time& time)
 	/* Update regressor */
 
 	dot_param.setZero();
-    fastRegMat.setArguments(q_curr, dot_q_curr, dot_qr, ddot_qr);
+    frankaRobot.setArguments(q_curr, dot_q_curr, dot_qr, ddot_qr);
 }
 
 void Backstepping::update(const ros::Time&, const ros::Duration& period)
@@ -208,14 +208,13 @@ void Backstepping::update(const ros::Time&, const ros::Duration& period)
 
 	Eigen::Matrix<double,6,6> tmp_conversion0, tmp_conversion1, tmp_conversion2;
 
-	/* Update pseudo-inverse of jacobian and its derivative */
+	frankaRobot.setArguments(q_curr,dot_q_curr, dot_qr, ddot_qr);
 
-	fastRegMat.setArguments(q_curr,dot_q_curr, dot_qr, ddot_qr);
+	/* Pseudo-inverse of jacobian and its derivative matrices */	
+	Eigen::MatrixXd mypJacEE = frankaRobot.get_J_ee_pinv();
+	Eigen::MatrixXd mydotJac = frankaRobot.get_J_ee_dot();
 
-	/* Compute pseudo-inverse of jacobian and its derivative */
-	
-	mypJacEE = fastRegMat.getPinvJac();
-	mydot_pJacEE = fastRegMat.getDotPinvJac();
+	auto mydot_pJacEE = - mypJacEE * mydotJac * mypJacEE;
 
 	/* Compute error translation */
 
@@ -263,8 +262,8 @@ void Backstepping::update(const ros::Time&, const ros::Duration& period)
 	
 	/* Update and Compute Regressor */
 	
-	fastRegMat.setArguments(q_curr, dot_q_curr, dot_qr, ddot_qr);
-	Yr = fastRegMat.getReg();
+	frankaRobot.setArguments(q_curr, dot_q_curr, dot_qr, ddot_qr);
+	Yr = frankaRobot.get_Yr();
 
 	/* tau_J_d is past tau_cmd saturated */
 

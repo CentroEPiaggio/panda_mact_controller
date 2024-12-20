@@ -29,7 +29,7 @@
 #include "panda_controllers/flag.h"
 
 // #include "utils/ThunderPanda.h"
-#include "utils/thunder_panda_2.h"
+#include "utils/thunder_franka.h"
 #include "utils/utils_param.h"
 
 #define     DEBUG   0
@@ -162,7 +162,7 @@ namespace panda_controllers
 
         /* Object Regressor Slotine Li*/
 
-        thunder_ns::thunder_panda_2 fastRegMat;
+    	thunder_franka frankaRobot;
 
         /* Check the effort limits */
         

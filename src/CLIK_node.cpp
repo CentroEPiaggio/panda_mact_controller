@@ -12,7 +12,7 @@
 #include "panda_controllers/point.h"
 #include "panda_controllers/desTrajEE.h"
 
-#include "utils/thunder_panda_2.h"
+#include "utils/thunder_franka.h"
 #include "utils/utils_cartesian.h"
 
 #include <franka_hw/franka_model_interface.h>
@@ -64,8 +64,8 @@ int main(int argc, char **argv)
     clik.effort.resize(NJ);
 
     /* robot kinematic */
-    thunder_ns::thunder_panda_2 robot_handle;
-    // robot_handle.init(NJ);
+    thunder_franka frankaRobot;
+    // frankaRobot.init(NJ);
     Eigen::Matrix<double,4,4> T0EE;
     Eigen::Matrix<double,6,NJ> JacEE;
     Eigen::Matrix<double,NJ,6> pJacEE; // Sta per pseudo-inversa
@@ -132,18 +132,18 @@ int main(int argc, char **argv)
 	    q_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state2.q.data());
 	    dot_q_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state2.dq.data());
         
-        robot_handle.setArguments(q_curr,dot_q_curr);
-        //T0EE = robot_handle.getKin_gen();
-        JacEE = robot_handle.getJac_gen();
-        pJacEE = robot_handle.getPinvJac_gen();
-        dot_pJacEE = robot_handle.getDotPinvJac_gen();
+        frankaRobot.setArguments(q_curr,dot_q_curr);
+        //T0EE = frankaRobot.getKin_gen();
+        JacEE = frankaRobot.getJac_gen();
+        pJacEE = frankaRobot.get_J_ee_pinv_gen();
+        dot_pJacEE = frankaRobot.getDotPinvJac_gen();
         */
 
-        robot_handle.setArguments(qr,dot_qr, qr, qr);
-        T0EE = robot_handle.getKin();
-        JacEE = robot_handle.getJac();
-        pJacEE = robot_handle.getPinvJac();
-        dot_pJacEE = robot_handle.getDotPinvJac();
+        frankaRobot.setArguments(qr,dot_qr, qr, qr);
+        T0EE = frankaRobot.getKin();
+        JacEE = frankaRobot.getJac();
+        pJacEE = frankaRobot.get_J_ee_pinv();
+        dot_pJacEE = frankaRobot.getDotPinvJac();
         
         if(!start){
             ee_rot_cmd = T0EE.block(0,0,3,3);

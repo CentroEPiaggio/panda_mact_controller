@@ -32,7 +32,7 @@
 #include "panda_controllers/impedanceGain.h"
 
 // #include "utils/ThunderPanda.h"
-#include "utils/thunder_panda_2.h"
+#include "utils/thunder_franka.h"
 #include "utils/utils_cartesian.h"
 #include "utils/utils_param.h"
 
@@ -249,10 +249,7 @@ private:
 	
 	/* Pseudo-inverse of jacobian and its derivative matrices */
 	Eigen::Matrix<double,DOF,NJ> J;
-    Eigen::Matrix<double,DOF,NJ> J_dot;
-	Eigen::Matrix<double,NJ,DOF> J_pinv;
     Eigen::Matrix<double,DOF,NJ> J_T_pinv;
-	Eigen::Matrix<double,NJ,DOF> J_dot_pinv;
     
     Eigen::Matrix<double,NJ,NJ> N1; // NullSpace Projector
     Eigen::Matrix<double,NJ,NJ> P; // Projector
@@ -261,7 +258,7 @@ private:
     /*Stack function calculation*/
     // Eigen::VectorXd S;
 
-    thunder_ns::thunder_panda_2 fastRegMat;
+    thunder_franka frankaRobot;
 
     /*Filter function*/
     void aggiungiDato(std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_, const Eigen::Matrix<double, NJ, 1>& dato_, int lunghezza_finestra_);

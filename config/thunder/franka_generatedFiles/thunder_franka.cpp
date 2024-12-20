@@ -1,6 +1,10 @@
 #include "thunder_franka.h"
 #include "franka_gen.h"
 
+
+/*OPTIONAL PYBIND11 INCLUDE POINT*/
+
+
 thunder_franka::thunder_franka(){
 	resizeVariables();
 }
@@ -817,7 +821,7 @@ Eigen::MatrixXd thunder_franka::get_J_8(){
 	out.resize(6,7);
 	long long p3[franka_J_8_fun_SZ_IW];
 	double p4[franka_J_8_fun_SZ_W];
-	const double* input_[] = {q.data()};
+	const double* input_[] = {q.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_J_8_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -913,7 +917,7 @@ Eigen::MatrixXd thunder_franka::get_J_ee(){
 	out.resize(6,7);
 	long long p3[franka_J_ee_fun_SZ_IW];
 	double p4[franka_J_ee_fun_SZ_W];
-	const double* input_[] = {q.data()};
+	const double* input_[] = {q.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_J_ee_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -925,7 +929,7 @@ Eigen::MatrixXd thunder_franka::get_J_ee_dot(){
 	out.resize(6,7);
 	long long p3[franka_J_ee_dot_fun_SZ_IW];
 	double p4[franka_J_ee_dot_fun_SZ_W];
-	const double* input_[] = {q.data(), dq.data()};
+	const double* input_[] = {q.data(), dq.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_J_ee_dot_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -937,7 +941,7 @@ Eigen::MatrixXd thunder_franka::get_J_ee_pinv(){
 	out.resize(7,6);
 	long long p3[franka_J_ee_pinv_fun_SZ_IW];
 	double p4[franka_J_ee_pinv_fun_SZ_W];
-	const double* input_[] = {q.data()};
+	const double* input_[] = {q.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_J_ee_pinv_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -1069,7 +1073,7 @@ Eigen::MatrixXd thunder_franka::get_T_0_8(){
 	out.resize(4,4);
 	long long p3[franka_T_0_8_fun_SZ_IW];
 	double p4[franka_T_0_8_fun_SZ_W];
-	const double* input_[] = {q.data()};
+	const double* input_[] = {q.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_T_0_8_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -1081,7 +1085,7 @@ Eigen::MatrixXd thunder_franka::get_T_0_ee(){
 	out.resize(4,4);
 	long long p3[franka_T_0_ee_fun_SZ_IW];
 	double p4[franka_T_0_ee_fun_SZ_W];
-	const double* input_[] = {q.data()};
+	const double* input_[] = {q.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_T_0_ee_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -1210,10 +1214,10 @@ Eigen::MatrixXd thunder_franka::get_reg_G(){
 // - Regressor matrix of the quantity J^T*w - //
 Eigen::MatrixXd thunder_franka::get_reg_JTw(){
 	Eigen::MatrixXd out;
-	out.resize(7,0);
+	out.resize(7,3);
 	long long p3[franka_reg_JTw_fun_SZ_IW];
 	double p4[franka_reg_JTw_fun_SZ_W];
-	const double* input_[] = {q.data(), w.data()};
+	const double* input_[] = {q.data(), w.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_reg_JTw_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -1222,10 +1226,10 @@ Eigen::MatrixXd thunder_franka::get_reg_JTw(){
 // - Regressor matrix of the quantity J*dq - //
 Eigen::MatrixXd thunder_franka::get_reg_Jdq(){
 	Eigen::MatrixXd out;
-	out.resize(6,0);
+	out.resize(6,3);
 	long long p3[franka_reg_Jdq_fun_SZ_IW];
 	double p4[franka_reg_Jdq_fun_SZ_W];
-	const double* input_[] = {q.data(), dq.data()};
+	const double* input_[] = {q.data(), dq.data(), Ln2EE.data()};
 	double* output_[] = {out.data()};
 	int check = franka_reg_Jdq_fun(input_, output_, p3, p4, 0);
 	return out;
@@ -1242,4 +1246,9 @@ Eigen::MatrixXd thunder_franka::get_reg_M(){
 	int check = franka_reg_M_fun(input_, output_, p3, p4, 0);
 	return out;
 }
+
+
+
+
+/*#-OPTIONAL SPACE FOR PYTHON BINDINGS-#*/
 
