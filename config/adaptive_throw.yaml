@@ -1,5 +1,4 @@
 # possible grippers: 0) dh3, 1) hand1, 2) hand2
-# sistema la frenata!!! forse più lenta è meglio
 throw_node:
   SIMULATION: 0         # use gazebo as robot
   GRIPPER: 1            # gripper used

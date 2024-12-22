@@ -7,11 +7,6 @@ joint_names_arr: &jointNames
     - panda_joint6
     - panda_joint7
 
-cartesian_impedance_controller_softbots:
-    type: panda_controllers/CartesianImpedanceControllerSoftbots
-    arm_id: panda
-    joint_names: *jointNames
-
 computed_torque_controller:
     type: panda_controllers/ComputedTorque
     arm_id: panda
@@ -60,15 +55,24 @@ slotine_controller:
     joint_names: *jointNames
     cutoff_frequency: 1000
     # --- Controller parameters --- #
-    kp1: 30.0   #default: 120.0
-    kp2: 15.0   #default: 70.0
-    kp3: 3.0    #default: 50.0
-    kv1: 15.0
-    kv2: 7.5
-    kv3: 1.5
+    gainLambda: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]     # gain for Lambda matrix
+    gainRlinks: [1, 1, 1, 1, 1, 1, 1]                   # gain for R matrix
+    gainRparam: [1.0, 0.1, 0.01, 0.001]                 # gain proportional to [mass, mass*length, mass*length^2] 
+    gainKd: [2, 2, 2, 2, 2, 2, 2]                       # gain for Kd matrix
     dt: 0.001
-    gainRlinks: [1, 1, 1, 1, 1, 1, 1]                 # gain for R matrix
-    gainRparam: [1, 0.1, 0.01, 0.001]                 # gain proportional to [mass, mass*length, mass*length^2] 
+    update_param: false
+
+slotine_controller_OS:
+    type: panda_controllers/Slotine_OS
+    arm_id: panda
+    joint_names: *jointNames
+    cutoff_frequency: 1000
+    # --- Controller parameters --- #
+    gainLambda: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]     # gain for Lambda matrix
+    gainRlinks: [1, 1, 1, 1, 1, 1, 1]                   # gain for R matrix
+    gainRparam: [1.0, 0.1, 0.01, 0.001]                 # gain proportional to [mass, mass*length, mass*length^2] 
+    gainKd: [2, 2, 2, 2, 2, 2, 2]                       # gain for Kd matrix
+    dt: 0.001
     update_param: false
 
 CT_mod_controller_OS:

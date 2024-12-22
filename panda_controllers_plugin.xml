@@ -24,6 +24,12 @@
 		</description>
 	</class>
 
+	<class name="panda_controllers/Slotine_OS" type="panda_controllers::Slotine_OS" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Slotine controller operative space.
+		</description>
+	</class>
+
 	<class name="panda_controllers/Backstepping" type="panda_controllers::Backstepping" base_class_type="controller_interface::ControllerBase">
 		<description>
 			Backstepping controller.

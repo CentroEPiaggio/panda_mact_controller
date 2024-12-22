@@ -49,7 +49,7 @@
 namespace panda_controllers
 {
 
-    class Slotine : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface,
+    class Slotine_OS : public controller_interface::MultiInterfaceController<franka_hw::FrankaModelInterface,
         hardware_interface::EffortJointInterface, franka_hw::FrankaStateInterface>
     {
   
@@ -163,7 +163,7 @@ namespace panda_controllers
         // Eigen::Matrix<double, NJ, NJ*(PARAM+FRICTION)> Y_mod_D;
         // Eigen::Matrix<double, NJ, NJ*(PARAM+FRICTION)> Y_norm_D;
 
-        /* Object Regressor Slotine Li*/
+        /* Object Regressor Slotine_OS Li*/
 
     	thunder_franka frankaRobot;
 

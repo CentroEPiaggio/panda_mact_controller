@@ -1,65 +1,65 @@
 //various library on which we work on
 #include <pluginlib/class_list_macros.h>
-#include <panda_controllers/slotine.h> //library of the Slotine 
+#include <panda_controllers/slotine_OS.h> //library of the Slotine_OS 
 #include <ros/package.h>
 
 namespace panda_controllers{
 
     // Definisco funzione oggetto thuderpanda per inizializzare il nodo di controllo
-    bool Slotine::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& node_handle)
+    bool Slotine_OS::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& node_handle)
     {
         this->cvc_nh = node_handle; // cvc_nh definito con tipo ros::NodeHandle in computerd_torque.h
  
         std::string arm_id; //checking up the arm id of the robot     
         if (!node_handle.getParam("arm_id", arm_id)) {
-		    ROS_ERROR("Slotine: Could not get parameter arm_id!");
+		    ROS_ERROR("Slotine_OS: Could not get parameter arm_id!");
 		    return false;
         }
 
         /* Assigning the time (dt definito come variabile double in computed_torque.h) */
 	    if (!node_handle.getParam("dt", dt)) {
-		    ROS_ERROR("Slotine: Could not get parameter dt!");
+		    ROS_ERROR("Slotine_OS: Could not get parameter dt!");
 		    return false;
 	    }
 
         /* Chek per il acquisizione corretta del nome dei giunti del franka*/
         std::vector<std::string> joint_names;
 	    if (!node_handle.getParam("joint_names", joint_names) || joint_names.size() != 7) {
-		    ROS_ERROR("Slotine: Error in parsing joints name!");
+		    ROS_ERROR("Slotine_OS: Error in parsing joints name!");
 		    return false;
 	    }
 
         /* Coppia di gestione errore su corretta acquisizione e crezione di model_handel_ */
 	    franka_hw::FrankaModelInterface* model_interface = robot_hw->get<franka_hw::FrankaModelInterface>();
 	    if (model_interface == nullptr) {
-		    ROS_ERROR_STREAM("Slotine: Error getting model interface from hardware!");
+		    ROS_ERROR_STREAM("Slotine_OS: Error getting model interface from hardware!");
 		    return false;
 	    }   
         /* Chek errori sul model_handle(necessario per usare i calcoli della dinamica del seriale)*/
         try {
 		    model_handle_.reset(new franka_hw::FrankaModelHandle(model_interface->getHandle(arm_id + "_model")));
 	    } catch (hardware_interface::HardwareInterfaceException& ex) {
-	    	ROS_ERROR_STREAM("Slotine: Exception getting model handle from interface: " << ex.what());
+	    	ROS_ERROR_STREAM("Slotine_OS: Exception getting model handle from interface: " << ex.what());
 		    return false;
 	    }
 	    
         /* Coppia di gestione errore ma questa volta sulla corretta acquisizione dell'oggetto state_handle_ */
         franka_hw::FrankaStateInterface* state_interface = robot_hw->get<franka_hw::FrankaStateInterface>();
     	if (state_interface == nullptr) {
-	    	ROS_ERROR_STREAM("Slotine: Error getting state interface from hardware");
+	    	ROS_ERROR_STREAM("Slotine_OS: Error getting state interface from hardware");
 	    	return false;
 	    }
         try {
 		    state_handle_.reset(new franka_hw::FrankaStateHandle(state_interface->getHandle(arm_id + "_robot")));
 	    } catch (hardware_interface::HardwareInterfaceException& ex) {
-		    ROS_ERROR_STREAM("Slotine: Exception getting state handle from interface: " << ex.what());
+		    ROS_ERROR_STREAM("Slotine_OS: Exception getting state handle from interface: " << ex.what());
 		    return false;
 	    }
 
         /*Gestione di non so quale errore (in tutti i seguenti errori le variabili assumono valore direttamente facendo riferimento a hardware del robot)*/
         hardware_interface::EffortJointInterface* effort_joint_interface = robot_hw->get<hardware_interface::EffortJointInterface>();
 	    if (effort_joint_interface == nullptr) {
-		    ROS_ERROR_STREAM("Slotine: Error getting effort joint interface from hardware!");
+		    ROS_ERROR_STREAM("Slotine_OS: Error getting effort joint interface from hardware!");
 		    return false;
 	    }
 
@@ -69,7 +69,7 @@ namespace panda_controllers{
 		    	joint_handles_.push_back(effort_joint_interface->getHandle(joint_names[i]));
 
 	    	} catch (const hardware_interface::HardwareInterfaceException& ex) {
-		    	ROS_ERROR_STREAM("Slotine: Exception getting joint handles: " << ex.what());
+		    	ROS_ERROR_STREAM("Slotine_OS: Exception getting joint handles: " << ex.what());
 		    	return false;
 	    	}
 	    }
@@ -138,8 +138,8 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_controller/command_joints", 1, &Slotine::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
-        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_controller/adaptiveFlag", 1, &Slotine::setFlagUpdate, this);
+        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_controller/command_joints", 1, &Slotine_OS::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
+        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_controller/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
         
         this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1); //dà informazione a topic loggin l'errore che si commette 
         this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
@@ -151,7 +151,7 @@ namespace panda_controllers{
     }
 
    
-    void Slotine::starting(const ros::Time& time){
+    void Slotine_OS::starting(const ros::Time& time){
     
         /* Getting Robot State in order to get q_curr and dot_q_curr */
 	    franka::RobotState robot_state = state_handle_->getRobotState();
@@ -211,7 +211,7 @@ namespace panda_controllers{
     }
 
 
-    void Slotine::update(const ros::Time&, const ros::Duration& period){
+    void Slotine_OS::update(const ros::Time&, const ros::Duration& period){
         
 		// ----- Data ----- //
         franka::RobotState robot_state = state_handle_->getRobotState();
@@ -395,13 +395,13 @@ namespace panda_controllers{
         this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?
     }
 
-    void Slotine::stopping(const ros::Time&)
+    void Slotine_OS::stopping(const ros::Time&)
     {
 	//TO DO
     }
 
     // Funzione per l'aggiunta di un dato al buffer_dq
-    void Slotine::aggiungiDato(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
+    void Slotine_OS::aggiungiDato(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
         buffer_.push_back(dato_);
         if (buffer_.size() > lunghezza_finestra) {
             buffer_.erase(buffer_.begin());
@@ -409,7 +409,7 @@ namespace panda_controllers{
     }
 
     // Funzione per il calcolo della media
-    Eigen::Matrix<double,7, 1> Slotine::calcolaMedia(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
+    Eigen::Matrix<double,7, 1> Slotine_OS::calcolaMedia(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
         Eigen::Matrix<double,7, 1> media = Eigen::Matrix<double,7, 1>::Zero();
         for (const auto& vettore : buffer_) {
             media += vettore;
@@ -418,7 +418,7 @@ namespace panda_controllers{
         return media;
     }
 
-    double Slotine::deltaCompute (double a){
+    double Slotine_OS::deltaCompute (double a){
         double delta;
         
         if (fabs(a) < 0.01){
@@ -430,7 +430,7 @@ namespace panda_controllers{
     }
 
     /* Check for the effort commanded */
-    Eigen::Matrix<double, 7, 1> Slotine::saturateTorqueRate(
+    Eigen::Matrix<double, 7, 1> Slotine_OS::saturateTorqueRate(
 	const Eigen::Matrix<double, 7, 1>& tau_d_calculated,
 	const Eigen::Matrix<double, 7, 1>& tau_J_d)
     {
@@ -444,7 +444,7 @@ namespace panda_controllers{
 	    return tau_d_saturated;
     }
 
-    void Slotine::setCommandCB(const sensor_msgs::JointStateConstPtr& msg)
+    void Slotine_OS::setCommandCB(const sensor_msgs::JointStateConstPtr& msg)
     {
         command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
         // command_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->velocity).data());
@@ -454,20 +454,20 @@ namespace panda_controllers{
 
     }
 
-    void Slotine::setFlagUpdate(const panda_controllers::flag::ConstPtr& msg){
+    void Slotine_OS::setFlagUpdate(const panda_controllers::flag::ConstPtr& msg){
         update_param_flag = msg->flag;
     }
 
 
     template <size_t N>
-    void Slotine::fillMsg(boost::array<double, N>& msg_, const Eigen::VectorXd& data_) {
+    void Slotine_OS::fillMsg(boost::array<double, N>& msg_, const Eigen::VectorXd& data_) {
         int dim = data_.size();
         for (int i = 0; i < dim; i++) {
             msg_[i] = data_[i];
         }
     }
 
-    void Slotine::fillMsgLink(panda_controllers::link_params &msg_, const Eigen::VectorXd& data_) {      
+    void Slotine_OS::fillMsgLink(panda_controllers::link_params &msg_, const Eigen::VectorXd& data_) {      
         msg_.mass = data_[0];
         msg_.m_CoM_x = data_[1];
         msg_.m_CoM_y = data_[2];
@@ -483,4 +483,4 @@ namespace panda_controllers{
     }
 
 }
-PLUGINLIB_EXPORT_CLASS(panda_controllers::Slotine, controller_interface::ControllerBase);
+PLUGINLIB_EXPORT_CLASS(panda_controllers::Slotine_OS, controller_interface::ControllerBase);
