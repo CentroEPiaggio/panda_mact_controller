@@ -91,9 +91,10 @@ catkin_package(
 add_library(${PROJECT_NAME}   
 	src/computed_torque.cpp 	# Computed Torque controller
 	src/computed_torque_mod.cpp # Computed Torque modified
-	src/CT_mod_OS.cpp 			# Computed Torque modified Operative space
+	src/CT_mod_OS.cpp 			# Computed Torque modified Operative Space
 	src/backstepping.cpp 		# Backstepping controller
 	src/slotine.cpp 			# Slotine controller
+	src/slotine_OS.cpp 			# Slotine controller Operative Space
 	src/franka_gen.cpp
 	src/thunder_franka.cpp
 )
