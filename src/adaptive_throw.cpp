@@ -407,7 +407,7 @@ int main(int argc, char **argv)
 	pub_hand_qbh2 = node_handle.advertise<trajectory_msgs::JointTrajectory>("/robot/gripper/qbhand2m1/control/qbhand2m1_synergies_trajectory_controller/command", 1);
 
 	ros::Publisher pub_error = node_handle.advertise<franka_msgs::ErrorRecoveryActionGoal>(robot_name + "/franka_control/error_recovery/goal", 1);
-	ros::Publisher pub_traj_cartesian = node_handle.advertise<panda_controllers::desTrajEE>("/CT_mod_controller_OS/command_cartesian", 1);
+	ros::Publisher pub_traj_cartesian = node_handle.advertise<panda_controllers::desTrajEE>("/slotine_controller_OS/command_cartesian", 1);
 	ros::Publisher pub_rpy = node_handle.advertise<panda_controllers::rpy>("/CT_mod_controller_OS/command_rpy", 1);
 	ros::Publisher pub_cmd_joints_CT = node_handle.advertise<sensor_msgs::JointState>("/CT_mod_controller_OS/command_joints", 1);
 	ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/adaptiveFlag", 1);

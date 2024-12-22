@@ -24,6 +24,7 @@
 //Ros Message
 #include <sensor_msgs/JointState.h>
 #include "panda_controllers/point.h"
+#include "panda_controllers/desTrajEE.h"
 #include "panda_controllers/link_params.h"
 #include "panda_controllers/log_adaptive_joints.h"
 #include "panda_controllers/flag.h"
@@ -69,7 +70,7 @@ namespace panda_controllers
         double dt;
         ros::Time time_now;
        
-        Eigen::Affine3d T0EE;
+        // Eigen::Affine3d T0EE;
 
         /*Variabili filtro Media mobile*/
         std::vector<Eigen::Matrix<double, 7, 1>> buffer_dq; // Array dinamico 7D
@@ -102,6 +103,10 @@ namespace panda_controllers
     
         /* Defining q_current, dot_q_current, and tau_cmd */
 
+		Eigen::Matrix<double, NJ, 1> q_d;
+		Eigen::Matrix<double, NJ, 1> dq_d;
+		Eigen::Matrix<double, NJ, 1> ddq_d;
+
         Eigen::Matrix<double, 7, 1> q_curr;
         Eigen::Matrix<double, 7, 1> dot_q_curr;
         Eigen::Matrix<double, 7, 1> dot_q_curr_old;
@@ -131,6 +136,15 @@ namespace panda_controllers
         Eigen::Matrix<double, 7, 1> command_dot_q_d_old;
         
         Eigen::Matrix<double, 7, 1> command_dot_dot_q_d;   // estimated desired acceleration command 
+
+		Eigen::Matrix<double, 3, 1> ee_pos_cmd;             // desired command position 
+		Eigen::Matrix<double, 3, 1> ee_vel_cmd;             // desired command velocity 
+		Eigen::Matrix<double, 3, 1> ee_acc_cmd;             // desired command acceleration 
+		
+		//Eigen::Matrix<double, 3, 1> ee_ang_cmd;           // desired command position
+		Eigen::Matrix<double, 3, 3> ee_rot_cmd;             // desired command position
+		Eigen::Matrix<double, 3, 1> ee_ang_vel_cmd;         // desired command velocity 
+		Eigen::Matrix<double, 3, 1> ee_ang_acc_cmd;         // desired command acceleration 
 
         /* Mass Matrix and Coriolis vector */
         
@@ -179,8 +193,8 @@ namespace panda_controllers
 
 
         /*Filter function*/
-        void aggiungiDato(std::vector<Eigen::Matrix<double, 7, 1>>& buffer_, const Eigen::Matrix<double, 7, 1>& dato_, int lunghezza_finestra_);
-        Eigen::Matrix<double, 7, 1> calcolaMedia(const std::vector<Eigen::Matrix<double, 7, 1>>& buffer_);
+        void addValue(std::vector<Eigen::Matrix<double, 7, 1>>& buffer_, const Eigen::Matrix<double, 7, 1>& dato_, int lunghezza_finestra_);
+        Eigen::Matrix<double, 7, 1> obtainMean(const std::vector<Eigen::Matrix<double, 7, 1>>& buffer_);
         double deltaCompute (double a);
 
         /* ROS variables */
@@ -194,7 +208,9 @@ namespace panda_controllers
         
         /* Setting Command Callback*/
         
-        void setCommandCB (const sensor_msgs::JointStateConstPtr& msg);
+        // void setCommandCB (const sensor_msgs::JointStateConstPtr& msg);
+
+		void setCommandCB(const desTrajEE::ConstPtr& msg);
         
         /*Setting Flag Callback*/
         void setFlagUpdate(const flag::ConstPtr& msg);

@@ -261,10 +261,10 @@ private:
     thunder_franka frankaRobot;
 
     /*Filter function*/
-    void aggiungiDato(std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_, const Eigen::Matrix<double, NJ, 1>& dato_, int lunghezza_finestra_);
-    Eigen::Matrix<double, NJ, 1> calcolaMedia(const std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_);
-    // void aggiungiDatoXi(std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_, const Eigen::Matrix<double, DOF, 1>& dato_, int lunghezza_finestra_);
-    // Eigen::Matrix<double, DOF, 1> calcolaMediaXi(const std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_);
+    void addValue(std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_, const Eigen::Matrix<double, NJ, 1>& dato_, int lunghezza_finestra_);
+    Eigen::Matrix<double, NJ, 1> obtainMean(const std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_);
+    // void addValueXi(std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_, const Eigen::Matrix<double, DOF, 1>& dato_, int lunghezza_finestra_);
+    // Eigen::Matrix<double, DOF, 1> obtainMeanXi(const std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_);
     
     double deltaCompute (double a);
 

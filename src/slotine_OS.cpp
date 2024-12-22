@@ -2,6 +2,9 @@
 #include <pluginlib/class_list_macros.h>
 #include <panda_controllers/slotine_OS.h> //library of the Slotine_OS 
 #include <ros/package.h>
+#include "utils/utils_cartesian.h"
+#include "panda_controllers/point.h"
+#include "panda_controllers/desTrajEE.h"
 
 namespace panda_controllers{
 
@@ -138,8 +141,9 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_controller/command_joints", 1, &Slotine_OS::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
-        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_controller/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
+		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/slotine__OS_controller/command_cartesian", 1, &Slotine_OS::setCommandCB, this);
+        // this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_OS_controller/command_joints", 1, &Slotine_OS::setCommandCB, this);
+        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_OS_controller/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
         
         this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1); //dà informazione a topic loggin l'errore che si commette 
         this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
@@ -165,6 +169,10 @@ namespace panda_controllers{
 	    dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
 	  /*  M = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data()); // matrice di massa calcolata usando librerie/stime del franka */
 	  /* C = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data()); // matrice di coriolis calcolata usando librerie/stime del franka */
+
+		q_d = q_curr;
+		dq_d.setZero();
+		ddq_d.setZero();
 
         /* Secure Initialization (all'inizio il comando ai giunti corrisponde a stato attuale -> errore iniziale pari a zero) */
 	    command_q_d = q_curr; // comando desiderato di posizione
@@ -208,6 +216,17 @@ namespace panda_controllers{
 		// auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka*command_dot_q_d + G_franka);
 		// std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
 		// std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
+
+		// Eigen::Affine3d T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data());
+		auto T0EE = frankaRobot.get_T_0_ee();
+		ee_pos_cmd = T0EE.block<3,1>(0,3);
+		ee_rot_cmd = T0EE.block<3,3>(0,0);
+		
+		ee_vel_cmd.setZero();
+		ee_acc_cmd.setZero();
+
+		ee_ang_vel_cmd.setZero();
+		ee_ang_acc_cmd.setZero();
     }
 
 
@@ -225,7 +244,7 @@ namespace panda_controllers{
         // tau_J = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.tau_J.data());
 
 		/* Actual position and velocity of the joints */
-        T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data()); // matrice di trasformazione omogenea che mi fa passare da s.d.r base a s.d.r EE
+        // T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data()); // matrice di trasformazione omogenea che mi fa passare da s.d.r base a s.d.r EE
         q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.q.data());
         dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
 
@@ -251,11 +270,11 @@ namespace panda_controllers{
 
 		// ----- Filters ----- //
 		// Filtro velocità e accelerazioni dopo calcolo errore
-        aggiungiDato(buffer_dq, dot_q_curr, WIN_LEN);
-        dot_q_curr = calcolaMedia(buffer_dq);
+        addValue(buffer_dq, dot_q_curr, WIN_LEN);
+        dot_q_curr = obtainMean(buffer_dq);
 		ddot_q_curr = (dot_q_curr - dot_q_curr_old)/dt;
-		aggiungiDato(buffer_ddq, ddot_q_curr, WIN_LEN);
-        ddot_q_curr = calcolaMedia(buffer_ddq);
+		addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
+        ddot_q_curr = obtainMean(buffer_ddq);
         dot_q_curr_old = dot_q_curr;
 
         // dq_est.setZero();
@@ -286,6 +305,97 @@ namespace panda_controllers{
     	// Kp_apix = Kp;
     	// Kv_apix = Kv;
 
+		/* ======================================== */
+		/*             CLICK ALGORITHM              */
+		/* ======================================== */
+
+		Eigen::Matrix<double,6,6> Lambda_OS;
+		Lambda_OS.setIdentity();
+		// Eigen::Matrix<double, NJ, 1> q_d;
+		// Eigen::Matrix<double, NJ, 1> qr_old;
+		// Eigen::Matrix<double, NJ, 1> dq_d;
+		// Eigen::Matrix<double, NJ, 1> ddq_d;
+		// Eigen::Matrix<double, NJ, 1> q_curr;
+		// Eigen::Matrix<double, NJ, 1> dot_q_curr;
+
+		/* Error and dot error feedback */
+		
+		Eigen::Matrix<double, 6, 1> error_OS;
+		Eigen::Matrix<double, 6, 1> dot_error_OS;
+
+		// Eigen::Vector3d ee_position, ee_velocity;
+		// Eigen::Vector3d ee_omega;
+		Eigen::VectorXd ee_vel_cmd_tot(6), ee_acc_cmd_tot(6);
+		// Eigen::VectorXd tmp_position(6), tmp_velocity(6);
+		
+		// Eigen::Matrix<double,3,3> ee_rot;
+		// Eigen::Matrix<double,3,3> Rs_tilde;
+		// Eigen::Matrix<double,3,3> L, dotL;
+
+		Eigen::Matrix<double,6,6> tmp_conversion0, tmp_conversion1, tmp_conversion2;
+
+		// Lambda_OS.setIdentity();
+
+		// ee_rot_cmd.setIdentity();
+		// ee_ang_vel_cmd.setZero();
+		// ee_ang_acc_cmd.setZero();
+
+		frankaRobot.set_q(q_curr);
+		frankaRobot.set_dq(dot_q_curr);
+		auto T0EE = frankaRobot.get_T_0_ee();
+		auto JacEE = frankaRobot.get_J_ee();
+		auto pJacEE = frankaRobot.get_J_ee_pinv();
+		auto dot_JacEE = frankaRobot.get_J_ee_dot();
+		auto dot_pJacEE = - pJacEE * dot_JacEE * pJacEE;
+
+		/* Compute error_OS translation */
+		auto ee_position = T0EE.col(3).head(3);
+		//ee_velocity = JacEE.topRows(3)*dot_q_curr;
+		auto ee_velocity = JacEE.topRows(3)*dq_d;
+
+		error_OS.head(3) = ee_pos_cmd - ee_position;
+		dot_error_OS.head(3) = ee_vel_cmd - ee_velocity;
+
+		/* Compute error_OS orientation */
+
+		auto ee_rot = T0EE.block(0,0,3,3);
+		//ee_omega = JacEE.bottomRows(3)*dot_q_curr;
+		auto ee_omega = JacEE.bottomRows(3)*dq_d;
+
+		auto Rs_tilde = ee_rot_cmd*ee_rot.transpose();
+		auto L = createL(ee_rot_cmd, ee_rot);
+		auto dotL = createDotL(ee_rot_cmd, ee_rot, ee_ang_vel_cmd, ee_omega);
+		
+		error_OS.tail(3) = vect(Rs_tilde);
+		dot_error_OS.tail(3) = L.transpose()*ee_ang_vel_cmd-L*ee_omega;
+
+		/* Compute reference */
+
+		ee_vel_cmd_tot << ee_vel_cmd, L.transpose()*ee_ang_vel_cmd;
+		ee_acc_cmd_tot << ee_acc_cmd, dotL.transpose()*ee_ang_vel_cmd + L.transpose()*ee_ang_acc_cmd;
+		
+		auto tmp_position = ee_vel_cmd_tot + Lambda_OS * error_OS;
+		auto tmp_velocity = ee_acc_cmd_tot + Lambda_OS * dot_error_OS;
+		
+		tmp_conversion0.setIdentity();
+		tmp_conversion0.block(3, 3, 3, 3) = L; // conversione da capire per le rotazioni
+		tmp_conversion1.setIdentity();
+		tmp_conversion1.block(3, 3, 3, 3) = L.inverse();
+		tmp_conversion2.setZero();
+		tmp_conversion2.block(3, 3, 3, 3) = -L.inverse() * dotL *L.inverse();
+
+		q_d = q_d + dt * dq_d + 0.5*pow(dt,2)*ddq_d;
+		dq_d = pJacEE*tmp_conversion1*tmp_position; // velocità desiderata
+		ddq_d = pJacEE*tmp_conversion1*tmp_velocity + pJacEE*tmp_conversion2*tmp_position + dot_pJacEE*tmp_conversion1*tmp_position;
+
+		command_q_d = q_d;
+		command_dot_q_d = dq_d;
+		command_dot_dot_q_d = ddq_d;
+		
+		/* ======================================== */
+		/*                 END CLIK                 */
+		/* ======================================== */
+
         /*Compute Friction matrix before filter*/
         Dest.setZero();
         for(int i = 0; i < 7; ++i){
@@ -293,11 +403,11 @@ namespace panda_controllers{
             Dest(i,i) = param_frict((FRICTION)*i,0) + param_frict((FRICTION)*i+1,0)*deltaCompute(dot_q_curr(i));
         }
 
-		error = command_q_d - q_curr; // errore di posizione(posizione desiderata - quella reale)
-	    dot_error = command_dot_q_d - dot_q_curr; // errore di velocità ai giunti 
+		error = q_d - q_curr; // errore di posizione(posizione desiderata - quella reale)
+	    dot_error = dq_d - dot_q_curr; // errore di velocità ai giunti 
 
-		auto dqr = command_dot_q_d + Lambda*error;
-		auto ddqr = command_dot_dot_q_d + Lambda*dot_error;
+		auto dqr = dq_d + Lambda*error;
+		auto ddqr = ddq_d + Lambda*dot_error;
 		auto s = dqr - dot_q_curr;
 
         /* Update and Compute Regressor mod e Regressor Classic*/
@@ -325,10 +435,10 @@ namespace panda_controllers{
 
         /*Gravità compensata non va nel calcolo del residuo*/
         // tau_J = tau_cmd;
-        // aggiungiDato(buffer_tau, tau_J, WIN_LEN);
+        // addValue(buffer_tau, tau_J, WIN_LEN);
 
         // Media dei dati nella finestra del filtro
-        // tau_J = calcolaMedia(buffer_tau);
+        // tau_J = obtainMean(buffer_tau);
         // Y_mod_D << Yr, Y_D; // concatenation
         // Y_norm_D << Y_norm, Y_D; // concatenation
         
@@ -387,9 +497,9 @@ namespace panda_controllers{
         fillMsg(msg_log.ddot_q_curr, ddot_q_curr);
 
         msg_config.header.stamp  = time_now; // publico tempo attuale nodo
-        msg_config.xyz.x = T0EE.translation()(0); 
-        msg_config.xyz.y = T0EE.translation()(1);
-        msg_config.xyz.z = T0EE.translation()(2);
+        // msg_config.xyz.x = T0EE.translation()(0); 
+        // msg_config.xyz.y = T0EE.translation()(1);
+        // msg_config.xyz.z = T0EE.translation()(2);
 
         this->pub_err_.publish(msg_log); // publico su nodo logging, i valori dei parametri aggiornati con la legge di controllo, e e dot_e (in pratica il vettori di stato del problema aumentato) 
         this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?
@@ -401,7 +511,7 @@ namespace panda_controllers{
     }
 
     // Funzione per l'aggiunta di un dato al buffer_dq
-    void Slotine_OS::aggiungiDato(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
+    void Slotine_OS::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
         buffer_.push_back(dato_);
         if (buffer_.size() > lunghezza_finestra) {
             buffer_.erase(buffer_.begin());
@@ -409,7 +519,7 @@ namespace panda_controllers{
     }
 
     // Funzione per il calcolo della media
-    Eigen::Matrix<double,7, 1> Slotine_OS::calcolaMedia(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
+    Eigen::Matrix<double,7, 1> Slotine_OS::obtainMean(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
         Eigen::Matrix<double,7, 1> media = Eigen::Matrix<double,7, 1>::Zero();
         for (const auto& vettore : buffer_) {
             media += vettore;
@@ -444,20 +554,25 @@ namespace panda_controllers{
 	    return tau_d_saturated;
     }
 
-    void Slotine_OS::setCommandCB(const sensor_msgs::JointStateConstPtr& msg)
-    {
-        command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
-        // command_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->velocity).data());
-        // command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
-        command_dot_q_d = command_dot_q_d + dt*command_dot_dot_q_d;
-        command_q_d = command_q_d + dt*command_dot_q_d;
+    // void Slotine_OS::setCommandCB(const sensor_msgs::JointStateConstPtr& msg)
+    // {
+    //     command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
+    //     command_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->velocity).data());
+    //     command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
+    //     // command_dot_q_d = command_dot_q_d + dt*command_dot_dot_q_d;
+    //     // command_q_d = command_q_d + dt*command_dot_q_d;
 
-    }
+    // }
 
     void Slotine_OS::setFlagUpdate(const panda_controllers::flag::ConstPtr& msg){
         update_param_flag = msg->flag;
     }
 
+	void Slotine_OS::setCommandCB(const panda_controllers::desTrajEE::ConstPtr& msg){
+		ee_pos_cmd << msg->position.x, msg->position.y, msg->position.z;
+		ee_vel_cmd << msg->velocity.x, msg->velocity.y, msg->velocity.z;
+		ee_acc_cmd << msg->acceleration.x, msg->acceleration.y, msg->acceleration.z;
+	}
 
     template <size_t N>
     void Slotine_OS::fillMsg(boost::array<double, N>& msg_, const Eigen::VectorXd& data_) {

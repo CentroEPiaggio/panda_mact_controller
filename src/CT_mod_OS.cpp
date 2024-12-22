@@ -348,13 +348,13 @@ namespace panda_controllers{
 		dot_q_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.dq.data());
 
 		/* Application of FIR to velocity and acceleration(velocity and torque filter no needed for true robot)*/
-		aggiungiDato(buffer_dq, dot_q_curr, 6);
-		dot_q_curr = calcolaMedia(buffer_dq);
+		addValue(buffer_dq, dot_q_curr, 6);
+		dot_q_curr = obtainMean(buffer_dq);
 
 		ddot_q_curr = (dot_q_curr - dot_q_curr_old) / dt;
 
-		aggiungiDato(buffer_ddq, ddot_q_curr, 6);
-		ddot_q_curr = calcolaMedia(buffer_ddq);
+		addValue(buffer_ddq, ddot_q_curr, 6);
+		ddot_q_curr = obtainMean(buffer_ddq);
 
 		dot_q_curr_old = dot_q_curr; 
 		ddot_q_curr_old = ddot_q_curr;
@@ -370,8 +370,8 @@ namespace panda_controllers{
 		// tau_J = tau_cmd;
 		tau_J = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J.data()); // best in simulation
 		F_cont = F_ext; // contact force
-		aggiungiDato(buffer_tau, tau_J,6);
-		tau_J = calcolaMedia(buffer_tau);
+		addValue(buffer_tau, tau_J,6);
+		tau_J = obtainMean(buffer_tau);
 	
 		/* Update pseudo-inverse of J and its derivative */
 		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
@@ -462,12 +462,12 @@ namespace panda_controllers{
 		Y_norm = frankaRobot.get_Yr();
 
 		err_param = Y_norm*param;
-		aggiungiDato(buffer_tau_d, err_param,6);
-		err_param = calcolaMedia(buffer_tau_d);
+		addValue(buffer_tau_d, err_param,6);
+		err_param = obtainMean(buffer_tau_d);
 
 		tau_est = Y_norm.block(0,0,NJ,(NJ-1)*PARAM)*param.segment(0,(NJ-1)*PARAM);
-		aggiungiDato(buffer_q, tau_est, 6);
-		tau_est = calcolaMedia(buffer_q);
+		addValue(buffer_q, tau_est, 6);
+		tau_est = obtainMean(buffer_q);
 
 		// ROS_INFO_STREAM(tau_J - Y_norm*param);
 
@@ -601,7 +601,7 @@ namespace panda_controllers{
 	}
 
 
-	void CTModOS::aggiungiDato(std::vector<Eigen::Matrix<double,NJ, 1>>& buffer_, const Eigen::Matrix<double,NJ, 1>& dato_, int lunghezza_finestra) {
+	void CTModOS::addValue(std::vector<Eigen::Matrix<double,NJ, 1>>& buffer_, const Eigen::Matrix<double,NJ, 1>& dato_, int lunghezza_finestra) {
 		buffer_.push_back(dato_);
 		if (buffer_.size() > lunghezza_finestra) {
 			buffer_.erase(buffer_.begin());
@@ -609,7 +609,7 @@ namespace panda_controllers{
 	}
 
 	// Funzione per il calcolo della media
-	Eigen::Matrix<double,NJ, 1> CTModOS::calcolaMedia(const std::vector<Eigen::Matrix<double,NJ, 1>>& buffer_) {
+	Eigen::Matrix<double,NJ, 1> CTModOS::obtainMean(const std::vector<Eigen::Matrix<double,NJ, 1>>& buffer_) {
 		Eigen::Matrix<double,NJ, 1> media = Eigen::Matrix<double,NJ, 1>::Zero();
 		for (const auto& vettore : buffer_) {
 			media += vettore;
