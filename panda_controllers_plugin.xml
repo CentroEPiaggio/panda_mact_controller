@@ -1,34 +1,39 @@
 <library path="lib/libpanda_controllers">
   
-  <class name="panda_controllers/ComputedTorque" type="panda_controllers::ComputedTorque" base_class_type="controller_interface::ControllerBase">
-   <description>
-      Computed Torque controller.
-   </description>
-  </class>
+	<class name="panda_controllers/ComputedTorque" type="panda_controllers::ComputedTorque" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Computed Torque controller.
+		</description>
+	</class>
 
-  <class name="panda_controllers/ComputedTorqueMod" type="panda_controllers::ComputedTorqueMod" base_class_type="controller_interface::ControllerBase">
-   <description>
-      Computed Torque controller modified.
-   </description>
-  </class>
+	<class name="panda_controllers/ComputedTorqueMod" type="panda_controllers::ComputedTorqueMod" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Computed Torque controller modified.
+		</description>
+	</class>
 
-<class name="panda_controllers/CTModOS" type="panda_controllers::CTModOS" base_class_type="controller_interface::ControllerBase">
-   <description>
-      Computed Torque controller modified operative space.
-   </description>
-  </class>
+	<class name="panda_controllers/CTModOS" type="panda_controllers::CTModOS" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Computed Torque controller modified operative space.
+		</description>
+	</class>
 
+	<class name="panda_controllers/Slotine" type="panda_controllers::Slotine" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Slotine controller.
+		</description>
+	</class>
 
-  <class name="panda_controllers/Backstepping" type="panda_controllers::Backstepping" base_class_type="controller_interface::ControllerBase">
-   <description>
-      Backstepping controller.
-   </description>
-  </class>
-  
-   <class name="panda_controllers/CartesianImpedanceControllerSoftbots" type="panda_controllers::CartesianImpedanceControllerSoftbots" base_class_type="controller_interface::ControllerBase">
-   <description>
-      Variable impedance controller.
-   </description>
-  </class>
+	<class name="panda_controllers/Backstepping" type="panda_controllers::Backstepping" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Backstepping controller.
+		</description>
+	</class>
+
+	<class name="panda_controllers/CartesianImpedanceControllerSoftbots" type="panda_controllers::CartesianImpedanceControllerSoftbots" base_class_type="controller_interface::ControllerBase">
+		<description>
+			Variable impedance controller.
+		</description>
+	</class>
 
 </library>

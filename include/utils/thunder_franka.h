@@ -21,9 +21,8 @@ class thunder_franka{
 		Eigen::VectorXd q, dq, dqr, ddqr, par_DYN, par_REG, par_Dl;
 		Eigen::VectorXd x, dx, ddxr, par_K, par_D, par_Dm;
 		Eigen::VectorXd w;
-		Eigen::MatrixXd DHtable;
-		Eigen::VectorXd gravity, world2L0, Ln2EE;
-		std::vector<int> gravity_symb, world2L0_symb, Ln2EE_symb;
+		Eigen::VectorXd DHtable, gravity, world2L0, Ln2EE;
+		std::vector<int> DHtable_symb, gravity_symb, world2L0_symb, Ln2EE_symb;
 
 		void update_inertial_DYN();
 		void update_inertial_REG();
@@ -57,7 +56,7 @@ class thunder_franka{
 		const int numElasticJoints = 0;
 		const int K_order = 0;
 		const int D_order = 0;
-		const int Dl_order = 0;
+		const int Dl_order = 2;
 		const int Dm_order = 0;
 		const int numParDYN = STD_PAR_LINK*n_joints;
 		const int numParREG = STD_PAR_LINK*n_joints;
@@ -131,6 +130,9 @@ class thunder_franka{
 
 		// - Classic formulation of the manipulator Coriolis matrix - //
 		Eigen::MatrixXd get_C_std();
+
+		// - Manipulator link friction - //
+		Eigen::MatrixXd get_Dl();
 
 		// - Manipulator gravity terms - //
 		Eigen::MatrixXd get_G();
@@ -251,6 +253,9 @@ class thunder_franka{
 
 		// - Regressor matrix of term C*dqr - //
 		Eigen::MatrixXd get_reg_C();
+
+		// - Regressor matrix of the link friction - //
+		Eigen::MatrixXd get_reg_Dl();
 
 		// - Regressor matrix of term G - //
 		Eigen::MatrixXd get_reg_G();

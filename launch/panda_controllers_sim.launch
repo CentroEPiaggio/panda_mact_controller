@@ -1,12 +1,13 @@
 <?xml version="1.0" ?>
-<!-- Launch file per far partire:
-	- gazebo e rviz
-	- il controllore desiderato: 
+<!-- Launch file to start:
+	- gazebo and rviz
+	- the controller: 
 		- backstepping_controller
 		- computed_torque_controller
 		- computed_torque_mod_controller
 		- CT_mod_controller_OS
-	- la traiettoria su rviz -->
+		- slotine_controller
+	- the trajectory on rviz -->
 <launch>
 
 	<arg name="package" 			default="panda_controllers" />
@@ -20,12 +21,12 @@
 	<arg name="rosbag_CT"			value="false" />
     
 	<!-- set controller -->
-	<arg name="controller_name" 	default="CT_mod_controller_OS" /> <!-- backstepping_controller, computed_torque_controller, computed_torque_mod_controller, CT_mod_controller_OS -->
+	<arg name="controller_name" 	default="slotine_controller" />
 	
 	<!-- to load yaml -->
-	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" /> <!-- File che carica valori di costanti quali valori di k e dt -->
+	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
 	<group ns="$(arg controller_name)">
-		<rosparam command="load" 	file="$(find panda_controllers)/config/inertial/inertial_DH_REG.yaml" /> <!--File che carica parametri dinamici per regressore stimati, ricavati attraverso dati URDF del franka con convernzione D-H -->
+		<rosparam command="load" 	file="$(find panda_controllers)/config/inertial/inertial_DH_REG.yaml" />
 	</group>
 
 	<!-- to load gazebo (and rviz) -->

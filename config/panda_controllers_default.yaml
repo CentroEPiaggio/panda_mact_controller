@@ -50,8 +50,25 @@ computed_torque_mod_controller:
     kv3: 1.5
     dt: 0.001
     gainRlinks: [1, 1, 1, 1, 1, 1, 1]                   # gain for R matrix
-    gainRparam: [1, 1, 1, 1]
-    # gainRparam: [1, 0.1, 0.01, 0.001]                          # gain proportional to [mass, mass*length, mass*length^2] 
+    # gainRparam: [1, 1, 1, 1]
+    gainRparam: [1, 0.1, 0.01, 0.001]                   # gain proportional to [mass, mass*length, mass*length^2] 
+    update_param: false
+
+slotine_controller:
+    type: panda_controllers/Slotine
+    arm_id: panda
+    joint_names: *jointNames
+    cutoff_frequency: 1000
+    # --- Controller parameters --- #
+    kp1: 30.0   #default: 120.0
+    kp2: 15.0   #default: 70.0
+    kp3: 3.0    #default: 50.0
+    kv1: 15.0
+    kv2: 7.5
+    kv3: 1.5
+    dt: 0.001
+    gainRlinks: [1, 1, 1, 1, 1, 1, 1]                 # gain for R matrix
+    gainRparam: [1, 0.1, 0.01, 0.001]                 # gain proportional to [mass, mass*length, mass*length^2] 
     update_param: false
 
 CT_mod_controller_OS:
@@ -85,7 +102,6 @@ CT_mod_controller_OS:
     # gainLambda: [2.0, 2.0, 3.0, 5.0, 5.0, 5.0] 
     update_param: false
    
-
 backstepping_controller:
     type: panda_controllers/Backstepping
     arm_id: panda
