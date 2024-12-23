@@ -85,17 +85,17 @@ CT_mod_controller_OS:
     kp1: 5.0   #default: 50
     kp2: 5.0
     kp3: 5.0
-    kp4: 1.0
-    kp5: 1.0
-    kp6: 1.0
+    kp4: 0.5
+    kp5: 0.5
+    kp6: 0.5
     # damping terms
-    gainKd: [2, 2, 2, 2, 2, 2, 2]
-    kv1: 15.0   #default: 20
-    kv2: 15.0
-    kv3: 15.0
-    kv4: 3.0
-    kv5: 3.0
-    kv6: 3.0
+    gainKd: [10, 10, 10, 10, 10, 10, 10]
+    kv1: 10.0   #default: 20
+    kv2: 10.0
+    kv3: 10.0
+    kv4: 1.0
+    kv5: 1.0
+    kv6: 1.0
     # joints level terms, null control
     kn1: 5.0
     kn2: 2.0
@@ -105,7 +105,7 @@ CT_mod_controller_OS:
     gainRparam: [1, 0.1, 0.01, 1, 0.0]                  # gain stands for [mass, m_CoM, I, d1, d2]
     # gainRparam: [1, 1, 1, 1]
     # gainLambda: [2.0, 2.0, 3.0, 5.0, 5.0, 5.0] 
-    update_param: false
+    update_param: true
    
 backstepping_controller:
     type: panda_controllers/Backstepping

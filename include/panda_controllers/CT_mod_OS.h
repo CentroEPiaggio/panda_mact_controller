@@ -130,6 +130,7 @@ private:
     Eigen::Matrix<double, NJ, 1> q_curr;
     Eigen::Matrix<double, NJ, 1> q_c; // vettore giunti meta corsa
     Eigen::Matrix<double, NJ, 1> dot_q_curr;
+	Eigen::Matrix<double, NJ, 1> dq_est;
     // Eigen::Matrix<double, NJ, 1> q_curr_old;
     Eigen::Matrix<double, NJ, 1> dot_q_curr_old;
     Eigen::Matrix<double, NJ, 1> dot_q_curr_old_2;
@@ -203,7 +204,8 @@ private:
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_tau;
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_tau_d;
     std::vector<Eigen::Matrix<double, 6, 1>> buffer_dot_error;
-    const int WIN_LEN = 6;
+    const int WIN_LEN = 1;
+	const int WIN_LEN_ACC = 3;
 
     /* Parameter vector */
     Eigen::Matrix<double, NJ, 1> tau_est;

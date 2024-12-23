@@ -346,15 +346,15 @@ namespace panda_controllers{
 		dot_q_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.dq.data());
 
 		/* Application of FIR to velocity and acceleration(velocity and torque filter no needed for true robot)*/
-		addValue(buffer_dq, dot_q_curr, WIN_LEN);
-		dot_q_curr = obtainMean(buffer_dq);
+		addValue(buffer_dq, dot_q_curr, WIN_LEN_ACC);
+		dq_est = obtainMean(buffer_dq);
+		// dot_q_curr = dq_est;
+		ddot_q_curr = (dq_est - dot_q_curr_old) / dt;
 
-		ddot_q_curr = (dot_q_curr - dot_q_curr_old) / dt;
+		// addValue(buffer_ddq, ddot_q_curr, WIN_LEN_ACC);
+		// ddot_q_curr = obtainMean(buffer_ddq);
 
-		addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
-		ddot_q_curr = obtainMean(buffer_ddq);
-
-		dot_q_curr_old = dot_q_curr; 
+		dot_q_curr_old = dq_est; 
 		ddot_q_curr_old = ddot_q_curr;
 	
 		/*Test computeT0EE fun*/
@@ -411,6 +411,7 @@ namespace panda_controllers{
 
 		/* NullSpace Calculation*/
 		N1 = (I7.setIdentity() - J_pinv*J);
+		// N1 = (I7.setIdentity() - J.transpose()*J_pinv.transpose());
 				
 		/* Compute error translation */
 		ee_position = T0EE.translation();
@@ -542,7 +543,8 @@ namespace panda_controllers{
 		/* command torque to joint */
 		tau_cmd_old = tau_cmd;
 		// tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp*error + J.transpose()*Kv*dot_error; // + Kn*dot_error_Nq0;
-		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error + N1*Kn*(error_Nq0-dot_q_curr);;
+		// tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error + N1*Kn*(error_Nq0-dot_q_curr);
+		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error + N1*Kn*(error_Nq0-dot_q_curr);
 
 		/*For testing without Adp*/
 		// tau_cmd = M*ddot_qr + C + G + J.transpose()*Kp*error + J.transpose()*Kv*dot_error + Kn*dot_error_Nq0;
