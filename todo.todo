@@ -1,7 +1,10 @@
-☐ add Slotine
-☐ add Slotine + clik
-☐ remove softbots
+✔ add Slotine @done (12/22/2024, 11:46:50 PM)
+✔ add Slotine + clik @done (12/22/2024, 11:46:51 PM)
+✔ remove softbots @done (12/22/2024, 11:46:53 PM)
+☐ oscillations problem on CT_mod_OS
+✘ each controller at the same topic, one for joints, one for cartesian @cancelled (12/23/2024, 7:39:48 AM)
+☐ big cleaning
 
 adaptive_throw:
-	☐ remove computeT0EE()
-	☐ oscillations problem on CT_mod_OS
+	✔ remove computeT0EE() @done (12/22/2024, 11:47:26 PM)
+	
