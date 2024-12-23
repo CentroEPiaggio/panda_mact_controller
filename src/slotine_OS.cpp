@@ -496,10 +496,10 @@ namespace panda_controllers{
         fillMsg(msg_log.tau_cmd, tau_cmd);
         fillMsg(msg_log.ddot_q_curr, ddot_q_curr);
 
-        msg_config.header.stamp  = time_now; // publico tempo attuale nodo
-        // msg_config.xyz.x = T0EE.translation()(0); 
-        // msg_config.xyz.y = T0EE.translation()(1);
-        // msg_config.xyz.z = T0EE.translation()(2);
+        msg_config.header.stamp  = time_now;
+        msg_config.xyz.x = ee_position(0); 
+        msg_config.xyz.y = ee_position(1);
+        msg_config.xyz.z = ee_position(2);
 
         this->pub_err_.publish(msg_log); // publico su nodo logging, i valori dei parametri aggiornati con la legge di controllo, e e dot_e (in pratica il vettori di stato del problema aumentato) 
         this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?

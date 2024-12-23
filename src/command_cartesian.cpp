@@ -28,7 +28,7 @@ bool end_motion = false;
 int flag_traj;
 
 /* Define lissajous parameters */
-double ampX, ampY, ampZ, freqX, freqY, freqZ, phiX, phiZ, offX, offY, offZ,liss_T;
+double ampX, ampY, ampZ, freqX, freqY, freqZ, phiX, phiY, phiZ, offX, offY, offZ,liss_T;
 
 /* Define minjerk parameters */
 double minjerk_T;
@@ -72,6 +72,7 @@ int main(int argc, char **argv)
 		!node_handle.getParam("lissajous/freqY", freqY) ||
 		!node_handle.getParam("lissajous/freqZ", freqZ) ||
         !node_handle.getParam("lissajous/phiX", phiX) ||
+		!node_handle.getParam("lissajous/phiY", phiY) ||
         !node_handle.getParam("lissajous/phiZ", phiZ) ||
         !node_handle.getParam("lissajous/offX", offX) ||
         !node_handle.getParam("lissajous/offY", offY) ||
@@ -185,7 +186,7 @@ void lissajous(const double dt_, const vec3d p0){
 
     double A = ampX, B = ampY, C = ampZ;
     double a = freqX, b = freqY, c = freqZ;
-    double dx = phiX, dz = phiZ;
+    double dx = phiX, dy = phiY, dz = phiZ;
     double t0 = 1.0/(4*b);
     //std::cout<<t0<<std::endl;
     dt = dt_;
@@ -195,19 +196,31 @@ void lissajous(const double dt_, const vec3d p0){
     x0 = 0.380 + offX;
     y0 = 0.000 + offY;
     z0 = 0.400 + offZ;
-        
 
-    position_t << 
+    // position_t << 
+    //     x0 + A * std::sin(2*M_PI * a * (dt-t0) + dx),
+    //     y0 + B * std::cos(2*M_PI * b * (dt-t0)),
+    //     z0 + C * std::sin(2*M_PI * c * (dt-t0) + dz);
+    // velocity_t << 
+    //     2*M_PI *A * a * std::cos(2*M_PI * a * (dt-t0) + dx),
+    //     -2*M_PI *B * b * std::sin(2*M_PI * b * (dt-t0)),
+    //     2*M_PI *C * c * std::cos(2*M_PI * c * (dt-t0) + dz);
+    // acceleration_t << 
+    //     -2*M_PI *2*M_PI *A * a * a * std::sin(2*M_PI * a * (dt-t0) + dx),
+    //     -2*M_PI *2*M_PI *B * b * b * std::cos(2*M_PI * b * (dt-t0)), 
+    //     -2*M_PI *2*M_PI *C * c * c * std::sin(2*M_PI * c * (dt-t0) + dz);
+
+	position_t << 
         x0 + A * std::sin(2*M_PI * a * (dt-t0) + dx),
-        y0 + B * std::cos(2*M_PI * b * (dt-t0)),
+        y0 + B * std::sin(2*M_PI * b * (dt-t0) + dy),
         z0 + C * std::sin(2*M_PI * c * (dt-t0) + dz);
     velocity_t << 
         2*M_PI *A * a * std::cos(2*M_PI * a * (dt-t0) + dx),
-        -2*M_PI *B * b * std::sin(2*M_PI * b * (dt-t0)),
+        2*M_PI *B * b * std::cos(2*M_PI * b * (dt-t0) + dy),
         2*M_PI *C * c * std::cos(2*M_PI * c * (dt-t0) + dz);
     acceleration_t << 
         -2*M_PI *2*M_PI *A * a * a * std::sin(2*M_PI * a * (dt-t0) + dx),
-        -2*M_PI *2*M_PI *B * b * b * std::cos(2*M_PI * b * (dt-t0)), 
+        -2*M_PI *2*M_PI *B * b * b * std::sin(2*M_PI * b * (dt-t0) + dy), 
         -2*M_PI *2*M_PI *C * c * c * std::sin(2*M_PI * c * (dt-t0) + dz);
 }
 

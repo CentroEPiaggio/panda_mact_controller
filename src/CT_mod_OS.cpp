@@ -361,6 +361,30 @@ namespace panda_controllers{
 		// ROS_INFO_STREAM(T0EE.translation()-computeT0EE(q_curr).translation());
 		// ROS_INFO_STREAM(T0EE.linear()-computeT0EE(q_curr).linear());
 
+		 /* Update regressor */
+        // frankaRobot.setInertialParam(param_dyn); // setta i parametri dinamici dell'oggetto frankaRobot e calcola una stima del regressore di M,C e G (che può differire da quella riportata dal franka)
+        // frankaRobot.set_par_REG(param);
+        // frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_qr); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
+		// auto M = frankaRobot.get_M();
+		// auto C = frankaRobot.get_C();
+		// auto G = frankaRobot.get_G();
+		// auto Y = frankaRobot.get_Yr();
+	    // std::array<double, 49> mass_array = model_handle_->getMass();
+	    // std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
+    	// Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
+	    // Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
+	    // Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+		// auto err_model = Y*param - (M*ddot_qr + C*dot_q_curr + G);
+		// auto err_franka = Y*param - (M_franka*ddot_qr + C_franka + G_franka);
+		// std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
+		// std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
+		// std::cout << "Y*param: " << Y*param << std::endl<<std::endl;
+		// std::cout << "dot_qr: " << dot_qr << std::endl<<std::endl;
+		// std::cout << "ddot_qr: " << ddot_qr << std::endl<<std::endl;
+		// std::cout << "M_franka: " << M_franka << std::endl<<std::endl;
+		// std::cout << "C_franka: " << C_franka << std::endl<<std::endl;
+		// std::cout << "G_franka: " << G_franka << std::endl<<std::endl;
+
 		/* tau_J_d is the desired link-side joint torque sensor signals "without gravity" */
 		tau_J_d = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J_d.data());
 		Eigen::VectorXd tau_J_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J.data()); // best in simulation
@@ -518,7 +542,7 @@ namespace panda_controllers{
 		/* command torque to joint */
 		tau_cmd_old = tau_cmd;
 		// tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp*error + J.transpose()*Kv*dot_error; // + Kn*dot_error_Nq0;
-		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error;
+		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error + N1*Kn*(error_Nq0-dot_q_curr);;
 
 		/*For testing without Adp*/
 		// tau_cmd = M*ddot_qr + C + G + J.transpose()*Kp*error + J.transpose()*Kv*dot_error + Kn*dot_error_Nq0;
@@ -529,7 +553,7 @@ namespace panda_controllers{
 
 		/* Set the command for each joint */
 		for (size_t i = 0; i < 7; i++) {
-		 	joint_handles_[i].setCommand(tau_cmd[i]-G[i]);
+		 	joint_handles_[i].setCommand(tau_cmd[i]-G(i));
 		}
 
 		/* Publish messages */
