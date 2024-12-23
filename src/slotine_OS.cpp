@@ -141,9 +141,9 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/slotine__OS_controller/command_cartesian", 1, &Slotine_OS::setCommandCB, this);
-        // this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_OS_controller/command_joints", 1, &Slotine_OS::setCommandCB, this);
-        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_OS_controller/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
+		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/slotine_controller_OS/command_cartesian", 1, &Slotine_OS::setCommandCB, this);
+        // this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_controller_OS/command_joints", 1, &Slotine_OS::setCommandCB, this);
+        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_controller_OS/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
         
         this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1); //dà informazione a topic loggin l'errore che si commette 
         this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
@@ -511,21 +511,21 @@ namespace panda_controllers{
     }
 
     // Funzione per l'aggiunta di un dato al buffer_dq
-    void Slotine_OS::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
+    void Slotine_OS::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int win_len) {
         buffer_.push_back(dato_);
-        if (buffer_.size() > lunghezza_finestra) {
+        if (buffer_.size() > win_len) {
             buffer_.erase(buffer_.begin());
         }
     }
 
-    // Funzione per il calcolo della media
+    // Funzione per il calcolo della mean
     Eigen::Matrix<double,7, 1> Slotine_OS::obtainMean(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
-        Eigen::Matrix<double,7, 1> media = Eigen::Matrix<double,7, 1>::Zero();
-        for (const auto& vettore : buffer_) {
-            media += vettore;
+        Eigen::Matrix<double,7, 1> mean = Eigen::Matrix<double,7, 1>::Zero();
+        for (const auto& vector : buffer_) {
+            mean += vector;
         }
-        media /= buffer_.size();
-        return media;
+        mean /= buffer_.size();
+        return mean;
     }
 
     double Slotine_OS::deltaCompute (double a){

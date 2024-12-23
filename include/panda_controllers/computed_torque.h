@@ -153,7 +153,7 @@ private:
     thunder_franka frankaRobot;
 
     /*Filter function*/
-    void addValue(std::vector<Eigen::Matrix<double, 7, 1>>& buffer_, const Eigen::Matrix<double, 7, 1>& dato_, int lunghezza_finestra_);
+    void addValue(std::vector<Eigen::Matrix<double, 7, 1>>& buffer_, const Eigen::Matrix<double, 7, 1>& dato_, int win_len_);
     Eigen::Matrix<double, 7, 1> obtainMean(const std::vector<Eigen::Matrix<double, 7, 1>>& buffer_);
     
     /* Check the effort limits */

@@ -76,7 +76,7 @@ namespace panda_controllers
         std::vector<Eigen::Matrix<double, 7, 1>> buffer_dq; // Array dinamico 7D
         std::vector<Eigen::Matrix<double, 7, 1>> buffer_ddq;
         std::vector<Eigen::Matrix<double, 7, 1>> buffer_tau;
-        const int WIN_LEN = 5;
+        const int WIN_LEN = 6;
 
 
         // Joint (torque, velocity) limits vector [Nm], from datasheet https://frankaemika.github.io/docs/control_parameters.html
@@ -193,7 +193,7 @@ namespace panda_controllers
 
 
         /*Filter function*/
-        void addValue(std::vector<Eigen::Matrix<double, 7, 1>>& buffer_, const Eigen::Matrix<double, 7, 1>& dato_, int lunghezza_finestra_);
+        void addValue(std::vector<Eigen::Matrix<double, 7, 1>>& buffer_, const Eigen::Matrix<double, 7, 1>& dato_, int win_len_);
         Eigen::Matrix<double, 7, 1> obtainMean(const std::vector<Eigen::Matrix<double, 7, 1>>& buffer_);
         double deltaCompute (double a);
 

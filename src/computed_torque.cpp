@@ -416,21 +416,21 @@ void ComputedTorque::stopping(const ros::Time&)
 }
 
  // Funzione per l'aggiunta di un dato al buffer_dq
-void ComputedTorque::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
+void ComputedTorque::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int win_len) {
     buffer_.push_back(dato_);
-    if (buffer_.size() > lunghezza_finestra) {
+    if (buffer_.size() > win_len) {
         buffer_.erase(buffer_.begin());
     }
 }
 
-    // Funzione per il calcolo della media
+    // Funzione per il calcolo della mean
 Eigen::Matrix<double,7, 1> ComputedTorque::obtainMean(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
-    Eigen::Matrix<double,7, 1> media = Eigen::Matrix<double,7, 1>::Zero();
+    Eigen::Matrix<double,7, 1> mean = Eigen::Matrix<double,7, 1>::Zero();
     for (const auto& vettore : buffer_) {
-        media += vettore;
+        mean += vettore;
     }
-    media /= buffer_.size();
-    return media;
+    mean /= buffer_.size();
+    return mean;
 }
 
 /* Check for the effort commanded */

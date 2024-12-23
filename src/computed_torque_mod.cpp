@@ -227,9 +227,9 @@ namespace panda_controllers{
 	    dot_error.setZero();
         param_tot.setZero();
 
-        /* Defining the NEW gains */
-        Kp_apix = Kp;
-        Kv_apix = Kv;
+        // /* Defining the NEW gains */
+        // Kp = Kp;
+        // Kv = Kv;
 
         
         dot_param.setZero();
@@ -259,31 +259,35 @@ namespace panda_controllers{
         
         /* Solito mappaggio già visto nell'inizializzazione*/
         franka::RobotState robot_state = state_handle_->getRobotState();
-	    std::array<double, 49> mass_array = model_handle_->getMass();
-	    std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
-    	M = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
-	    C = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
-	    G = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+	    // std::array<double, 49> mass_array = model_handle_->getMass();
+	    // std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
+    	// M = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
+	    // C = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
+	    // G = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
 
 		/* Actual position and velocity of the joints */
-        T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data()); // matrice di trasformazione omogenea che mi fa passare da s.d.r base a s.d.r EE
+        // T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data()); // matrice di trasformazione omogenea che mi fa passare da s.d.r base a s.d.r EE
         q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.q.data());
         dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
 
-		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
-		M = frankaRobot.get_M();
-		C = frankaRobot.get_C()*dot_q_curr;
-		G = frankaRobot.get_G();
-		auto Y = frankaRobot.get_Yr();
-	    mass_array = model_handle_->getMass();
-	    coriolis_array = model_handle_->getCoriolis();
-    	Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
-	    Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
-	    Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
-		auto err_model = Y*param - (M*command_dot_dot_q_d + C + G);
-		auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
-		std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
-		std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
+		/* tau_J_d is the desired link-side joint torque sensor signals "without gravity" (un concetto più teorico ideale per inseguimento dato da franka?)*/
+	    tau_J_d = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.tau_J_d.data());
+        // tau_J = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.tau_J.data());
+
+		// frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
+		// M = frankaRobot.get_M();
+		// C = frankaRobot.get_C()*dot_q_curr;
+		// G = frankaRobot.get_G();
+		// auto Y = frankaRobot.get_Yr();
+	    // mass_array = model_handle_->getMass();
+	    // coriolis_array = model_handle_->getCoriolis();
+    	// Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
+	    // Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
+	    // Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+		// auto err_model = Y*param - (M*command_dot_dot_q_d + C + G);
+		// auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
+		// std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
+		// std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
 
     	/* =============================================================================== */
         /* check matrix per vedere le stime riprodotte seguendo il calcolo del regressore*/
@@ -294,25 +298,26 @@ namespace panda_controllers{
         Gest = frankaRobot.get_G_gen();
         */
        /* =============================================================================== */
-      
     
         // q_est_old = q_est;
         // q_est = q_est + 0.9*(q_curr - q_est);
         // dot_q_curr = (q_curr - q_est_old)/dt;
 
-        ddot_q_curr = (dot_q_curr - dot_q_curr_old)/dt;
+		// Filtro velocità e accelerazioni dopo calcolo errore
+        addValue(buffer_dq, dot_q_curr, WIN_LEN);
+        dot_q_curr = obtainMean(buffer_dq);
+
+		ddot_q_curr = (dot_q_curr - dot_q_curr_old)/dt;
         dot_q_curr_old = dot_q_curr;
 
+        addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
+        ddot_q_curr = obtainMean(buffer_ddq);
 
         // dq_est.setZero();
         // ddot_q_curr_old.setZero();
         // Filro semplice per ddot_q_curr(tipo feeding filter)
         // ddot_q_curr = 0.8*ddot_q_curr + 0.2*ddot_q_curr_old;
         // ddot_q_curr_old = ddot_q_curr;
-
-        /* tau_J_d is the desired link-side joint torque sensor signals "without gravity" (un concetto più teorico ideale per inseguimento dato da franka?)*/
-	    tau_J_d = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.tau_J_d.data());
-        // tau_J = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.tau_J.data());
 
         /* Saturate desired velocity to avoid limits*/  
         // for (int i = 0; i < 7; ++i){
@@ -324,8 +329,8 @@ namespace panda_controllers{
 
         error = command_q_d - q_curr; // errore di posizione(posizione desiderata - quella reale)
 	    dot_error = command_dot_q_d - dot_q_curr; // errore di velocità ai giunti 
-	    x.head(7) = error; // x indica la variabile di stato composta da [error dot_error]'
-	    x.tail(7) = dot_error;
+	    // x.head(7) = error; // x indica la variabile di stato composta da [error dot_error]'
+	    // x.tail(7) = dot_error;
 
      /*   // Publish tracking errors as joint states(ad ogni update nodo mi mostra il valore di errore di posizione e velocità ai giunti e l'istante di riferimento)
         sensor_msgs::JointState error_msg;
@@ -338,8 +343,8 @@ namespace panda_controllers{
         this->pub_err_.publish(error_msg);*/
 
         /* Sempre stessi valori dei guadagni*/
-    	Kp_apix = Kp;
-    	Kv_apix = Kv;
+    	// Kp = Kp;
+    	// Kv = Kv;
 
         /*Compute Friction matrix before filter*/
         Dest.setZero();
@@ -347,14 +352,6 @@ namespace panda_controllers{
             // Dest(i,i) = param_frict((FRICTION)*i,0) + param_frict((FRICTION)*i+1,0)*fabs(dot_q_curr(i));
             Dest(i,i) = param_frict((FRICTION)*i,0) + param_frict((FRICTION)*i+1,0)*deltaCompute(dot_q_curr(i));
         }
-        
-
-        // Filtro velocità e accelerazioni dopo calcolo errore
-        addValue(buffer_dq, dot_q_curr, WIN_LEN);
-        dq_est = obtainMean(buffer_dq);
-        dot_q_curr = dq_est;
-        addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
-        ddot_q_curr = obtainMean(buffer_ddq);
 
         /* Update and Compute Regressor mod e Regressor Classic*/
 	    frankaRobot.setArguments(q_curr, dot_q_curr, command_dot_q_d, command_dot_dot_q_d);
@@ -363,7 +360,6 @@ namespace panda_controllers{
         Y_norm = frankaRobot.get_Yr();
         // ROS_INFO_STREAM(Y_norm.transpose());
         // redY_norm = Y_norm.block(0,(NJ-1)*PARAM,NJ,PARAM);
-
 
         /*Calcolo a meno del regressore di attrito*/
         Y_D.setZero();
@@ -415,8 +411,8 @@ namespace panda_controllers{
         Gest = frankaRobot.get_G(); // modello di gravità stimata usando regressore
 
         /* command torque to joint */
-        tau_cmd = Mest * command_dot_dot_q_d + Cest * command_dot_q_d  + Kp_apix * error + Kv_apix * dot_error + Gest;// + Dest*command_dot_q_d; // perchè si sottrae G a legge controllo standard?  legge controllo computed torque (usare M,C e G dovrebbe essere la stessa cosa)
-        // tau_cmd = Mest * command_dot_dot_q_d + Cest * dot_q_curr  + Kp_apix * error + Kv_apix * dot_error + Gest - G; // perchè si sottrae G a legge controllo standard?  legge controllo computed torque (usare M,C e G dovrebbe essere la stessa cosa)
+        tau_cmd = Mest * command_dot_dot_q_d + Cest * command_dot_q_d  + Kp * error + Kv * dot_error + Gest;// + Dest*command_dot_q_d; // perchè si sottrae G a legge controllo standard?  legge controllo computed torque (usare M,C e G dovrebbe essere la stessa cosa)
+        // tau_cmd = Mest * command_dot_dot_q_d + Cest * dot_q_curr  + Kp * error + Kv * dot_error + Gest - G; // perchè si sottrae G a legge controllo standard?  legge controllo computed torque (usare M,C e G dovrebbe essere la stessa cosa)
 
 
 
@@ -429,12 +425,17 @@ namespace panda_controllers{
 	    }
 
         /* Publish messages (errore di posizione e velocità, coppia comandata ai giunti, parametri dinamici dei vari giunti stimati)*/
+
+		Eigen::Map<Eigen::MatrixXd> Kp_vect(Kp.data(), 49,1);
+		Eigen::Map<Eigen::MatrixXd> Kv_vect(Kv.data(), 49,1);
+
         time_now = ros::Time::now();
         msg_log.header.stamp = time_now;
 
         fillMsg(msg_log.error_q, error);
         fillMsg(msg_log.dot_error_q, dot_error);
         fillMsg(msg_log.q_cur, q_curr);
+		fillMsg(msg_log.dot_q_cur, dot_q_curr);
         fillMsgLink(msg_log.link1, param_tot.segment(0, PARAM+FRICTION));
         fillMsgLink(msg_log.link2, param_tot.segment(12, PARAM+FRICTION));
         fillMsgLink(msg_log.link3, param_tot.segment(24, PARAM+FRICTION));
@@ -444,8 +445,10 @@ namespace panda_controllers{
         fillMsgLink(msg_log.link7, param_tot.segment(72, PARAM+FRICTION));
         fillMsg(msg_log.tau_cmd, err_param);
         fillMsg(msg_log.ddot_q_curr, ddot_q_curr);
+		fillMsg(msg_log.Kp, Kp_vect);
+		fillMsg(msg_log.Kv, Kv_vect);
 
-        msg_config.header.stamp  = time_now; // publico tempo attuale nodo
+        msg_config.header.stamp  = time_now;
         msg_config.xyz.x = T0EE.translation()(0); 
         msg_config.xyz.y = T0EE.translation()(1);
         msg_config.xyz.z = T0EE.translation()(2);
@@ -460,21 +463,21 @@ namespace panda_controllers{
     }
 
     // Funzione per l'aggiunta di un dato al buffer_dq
-    void ComputedTorqueMod::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
+    void ComputedTorqueMod::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int win_len) {
         buffer_.push_back(dato_);
-        if (buffer_.size() > lunghezza_finestra) {
+        if (buffer_.size() > win_len) {
             buffer_.erase(buffer_.begin());
         }
     }
 
-    // Funzione per il calcolo della media
+    // Funzione per il calcolo della mean
     Eigen::Matrix<double,7, 1> ComputedTorqueMod::obtainMean(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
-        Eigen::Matrix<double,7, 1> media = Eigen::Matrix<double,7, 1>::Zero();
-        for (const auto& vettore : buffer_) {
-            media += vettore;
+        Eigen::Matrix<double,7, 1> mean = Eigen::Matrix<double,7, 1>::Zero();
+        for (const auto& vector : buffer_) {
+            mean += vector;
         }
-        media /= buffer_.size();
-        return media;
+        mean /= buffer_.size();
+        return mean;
     }
 
     double ComputedTorqueMod::deltaCompute (double a){
@@ -507,7 +510,7 @@ namespace panda_controllers{
     {
         command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
         command_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->velocity).data());
-        command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
+        command_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->position).data());
         // command_dot_q_d = command_dot_q_d + dt*command_dot_dot_q_d;
         // command_q_d = command_q_d + dt*command_dot_q_d;
 

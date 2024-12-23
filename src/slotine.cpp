@@ -369,6 +369,11 @@ namespace panda_controllers{
 	    }
 
         /* Publish messages (errore di posizione e velocità, coppia comandata ai giunti, parametri dinamici dei vari giunti stimati)*/
+		Eigen::Matrix<double,7,7> Kp = (Cest + Kd)*Lambda;
+		Eigen::Matrix<double,7,7> Kv = Mest * Lambda + Cest + Kd;
+		Eigen::Map<Eigen::MatrixXd> Kp_vect(Kp.data(), 49,1);
+		Eigen::Map<Eigen::MatrixXd> Kv_vect(Kv.data(), 49,1);
+		
         time_now = ros::Time::now();
         msg_log.header.stamp = time_now;
 
@@ -385,6 +390,8 @@ namespace panda_controllers{
         fillMsgLink(msg_log.link7, param_tot.segment(72, PARAM+FRICTION));
         fillMsg(msg_log.tau_cmd, tau_cmd);
         fillMsg(msg_log.ddot_q_curr, ddot_q_curr);
+		fillMsg(msg_log.Kp, Kp_vect);
+		fillMsg(msg_log.Kv, Kv_vect);
 
         msg_config.header.stamp  = time_now; // publico tempo attuale nodo
         msg_config.xyz.x = T0EE.translation()(0); 
@@ -401,21 +408,21 @@ namespace panda_controllers{
     }
 
     // Funzione per l'aggiunta di un dato al buffer_dq
-    void Slotine::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int lunghezza_finestra) {
+    void Slotine::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int win_len) {
         buffer_.push_back(dato_);
-        if (buffer_.size() > lunghezza_finestra) {
+        if (buffer_.size() > win_len) {
             buffer_.erase(buffer_.begin());
         }
     }
 
-    // Funzione per il calcolo della media
+    // Funzione per il calcolo della mean
     Eigen::Matrix<double,7, 1> Slotine::obtainMean(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
-        Eigen::Matrix<double,7, 1> media = Eigen::Matrix<double,7, 1>::Zero();
-        for (const auto& vettore : buffer_) {
-            media += vettore;
+        Eigen::Matrix<double,7, 1> mean = Eigen::Matrix<double,7, 1>::Zero();
+        for (const auto& vector : buffer_) {
+            mean += vector;
         }
-        media /= buffer_.size();
-        return media;
+        mean /= buffer_.size();
+        return mean;
     }
 
     double Slotine::deltaCompute (double a){
@@ -448,7 +455,7 @@ namespace panda_controllers{
     {
         command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
         command_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->velocity).data());
-        command_dot_dot_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->effort).data());
+        command_q_d = Eigen::Map<const Eigen::Matrix<double, 7, 1>>((msg->position).data());
         // command_dot_q_d = command_dot_q_d + dt*command_dot_dot_q_d;
         // command_q_d = command_q_d + dt*command_dot_q_d;
 
