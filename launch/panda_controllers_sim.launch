@@ -22,7 +22,7 @@
 	<arg name="rosbag_CT"			value="false" />
     
 	<!-- set controller -->
-	<arg name="controller_name" 	default="slotine_controller_OS" />
+	<arg name="controller_name" 	default="CT_mod_controller_OS" />
 	
 	<!-- to load yaml -->
 	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />

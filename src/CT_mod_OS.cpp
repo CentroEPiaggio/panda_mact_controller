@@ -179,19 +179,23 @@ namespace panda_controllers{
 
 		/* Param_dyn initial calculation*/
 		frankaRobot.set_par_REG(param);
-		
+
 		/* Inizializing the R gains to update parameters*/
-		std::vector<double> gainRlinks(NJ), gainRparam(3);
+		std::vector<double> gainRlinks(NJ), gainRparam(3), gainKd(7);;
 		Eigen::Matrix<double,PARAM,PARAM> Rlink;
 		Eigen::Matrix<double,FRICTION,FRICTION> Rlink_fric;
 		if (!node_handle.getParam("gainRlinks", gainRlinks) ||
 			!node_handle.getParam("gainRparam", gainRparam) ||
+			!node_handle.getParam("gainKd", gainKd)  ||
 			!node_handle.getParam("update_param", update_param_flag)) {
 	
 			ROS_ERROR("Computed_torque Could not get gain parameter for R, Kd!");
 			return false;
 		}
-
+		Kd.setIdentity();
+		for(int i=0;i<NJ;i++){
+			Kd(i,i) = gainKd[i];
+		}
 		/* setting R weight */
 		Rlink.setZero();
 		Rlink(0,0) = gainRparam[0];
@@ -309,11 +313,6 @@ namespace panda_controllers{
 		dq_limit << 2.1, 2.1, 2.1, 2.1, 2.6, 2.6, 2.6;
 		// ddq_limit << 15, 7.5, 10, 12.5, 15, 20, 20;
 		ddq_limit << 1.0, 1.0, 1.0, 1.0, 1.3, 1.3, 1.3;
-
-
-		/* Defining the NEW gains */
-		Kp_xi = Kp;
-		Kv_xi = Kv;
 		
 		/* Update regressor */
 		dot_param.setZero();
@@ -342,18 +341,17 @@ namespace panda_controllers{
 		G = Eigen::Map<Eigen::Matrix<double, NJ, 1>> (model_handle_->getGravity().data());
 		T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data());
 
-
 		/* Actual position, velocity and acceleration of the joints */
 		q_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.q.data());
 		dot_q_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.dq.data());
 
 		/* Application of FIR to velocity and acceleration(velocity and torque filter no needed for true robot)*/
-		addValue(buffer_dq, dot_q_curr, 6);
+		addValue(buffer_dq, dot_q_curr, WIN_LEN);
 		dot_q_curr = obtainMean(buffer_dq);
 
 		ddot_q_curr = (dot_q_curr - dot_q_curr_old) / dt;
 
-		addValue(buffer_ddq, ddot_q_curr, 6);
+		addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
 		ddot_q_curr = obtainMean(buffer_ddq);
 
 		dot_q_curr_old = dot_q_curr; 
@@ -370,8 +368,8 @@ namespace panda_controllers{
 		// tau_J = tau_cmd;
 		tau_J = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J.data()); // best in simulation
 		F_cont = F_ext; // contact force
-		addValue(buffer_tau, tau_J,6);
-		tau_J = obtainMean(buffer_tau);
+		// addValue(buffer_tau, tau_J,WIN_LEN);
+		// tau_J = obtainMean(buffer_tau);
 	
 		/* Update pseudo-inverse of J and its derivative */
 		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
@@ -431,7 +429,6 @@ namespace panda_controllers{
 		error.tail(3) = vect(Rs_tilde);
 		dot_error.tail(3) = L_tmp.transpose()*ee_ang_vel_cmd-L_tmp*ee_omega;
 		
-		// if (update_opt_flag == false){
 		/* Inverse-Kinematics */
 		ee_vel_cmd_tot << ee_vel_cmd, L_tmp.transpose()*ee_ang_vel_cmd;
 		ee_acc_cmd_tot << ee_acc_cmd, L_dot_tmp.transpose()*ee_ang_vel_cmd + L_tmp.transpose()*ee_ang_acc_cmd;
@@ -444,30 +441,26 @@ namespace panda_controllers{
 		tmp_conversion2.block(3, 3, 3, 3) = -L_tmp.inverse() * L_dot_tmp *L_tmp.inverse();
 
 		dot_qr = J_pinv*tmp_conversion1*ee_vel_cmd_tot; 
-		ddot_qr = J_pinv*tmp_conversion1*ee_acc_cmd_tot + J_pinv*tmp_conversion2*ee_vel_cmd_tot +J_dot_pinv*tmp_conversion1*ee_vel_cmd_tot + N1*Kn*(q_c - q_curr - 0.2*dot_q_curr); 
-		// }
+		ddot_qr = J_pinv*tmp_conversion1*ee_acc_cmd_tot + J_pinv*tmp_conversion2*ee_vel_cmd_tot +J_dot_pinv*tmp_conversion1*ee_vel_cmd_tot;
 
 		/* Error definition in Null Space*/
 		dot_error_q = dot_qr - dot_q_curr;
-		error_Nq0 = q_c - q_curr;
-		dot_error_Nq0 = N1*(error_Nq0-dot_q_curr);
-
-		Kp_xi = Kp;
-		Kv_xi = Kv;
+		// error_Nq0 = q_c - q_curr;
+		// dot_error_Nq0 = N1*(error_Nq0-dot_q_curr);
 
 		/* Update and Compute Regressor */
 		frankaRobot.setArguments(q_curr, dot_q_curr, dot_qr, ddot_qr);
-		Y_mod = frankaRobot.get_Yr(); // Regressor compute
+		Y_mod = frankaRobot.get_Yr();
 		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr);
 		Y_norm = frankaRobot.get_Yr();
 
 		err_param = Y_norm*param;
-		addValue(buffer_tau_d, err_param,6);
-		err_param = obtainMean(buffer_tau_d);
+		// addValue(buffer_tau_d, err_param,WIN_LEN);
+		// err_param = obtainMean(buffer_tau_d);
 
-		tau_est = Y_norm.block(0,0,NJ,(NJ-1)*PARAM)*param.segment(0,(NJ-1)*PARAM);
-		addValue(buffer_q, tau_est, 6);
-		tau_est = obtainMean(buffer_q);
+		// tau_est = Y_norm.block(0,0,NJ,(NJ-1)*PARAM)*param.segment(0,(NJ-1)*PARAM);
+		// addValue(buffer_q, tau_est, WIN_LEN);
+		// tau_est = obtainMean(buffer_q);
 
 		// ROS_INFO_STREAM(tau_J - Y_norm*param);
 
@@ -524,10 +517,11 @@ namespace panda_controllers{
 	  
 		/* command torque to joint */
 		tau_cmd_old = tau_cmd;
-		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp_xi*error + J.transpose()*Kv_xi*dot_error + Kn*dot_error_Nq0;
+		// tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp*error + J.transpose()*Kv*dot_error; // + Kn*dot_error_Nq0;
+		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error;
 
 		/*For testing without Adp*/
-		// tau_cmd = M*ddot_qr + C + G + J.transpose()*Kp_xi*error + J.transpose()*Kv_xi*dot_error + Kn*dot_error_Nq0;
+		// tau_cmd = M*ddot_qr + C + G + J.transpose()*Kp*error + J.transpose()*Kv*dot_error + Kn*dot_error_Nq0;
 
 		/* Verify the tau_cmd not exceed the desired joint torque value tau_J_d */
 		// tau_cmd = saturateTorqueRate(tau_cmd, tau_J_curr); // works very bad, too much noise in the joint sensors
@@ -586,8 +580,8 @@ namespace panda_controllers{
 		// cout<<"error: "<<error<<endl;
 		// cout<<"dot_error: "<<dot_error<<endl;
 		// cout<<"dot_error_Nq0: "<<dot_error_Nq0<<endl;
-		// cout<<"kp_xi: "<<Kp_xi<<endl;
-		// cout<<"kv_xi: "<<Kv_xi<<endl;
+		// cout<<"kp_xi: "<<Kp<<endl;
+		// cout<<"kv_xi: "<<Kv<<endl;
 		// cout<<"kn: "<<Kn<<endl;
 		// cout<<"Mest: "<<Mest<<endl;
 		// cout<<"Cest: "<<Cest<<endl;
@@ -601,21 +595,21 @@ namespace panda_controllers{
 	}
 
 
-	void CTModOS::addValue(std::vector<Eigen::Matrix<double,NJ, 1>>& buffer_, const Eigen::Matrix<double,NJ, 1>& dato_, int lunghezza_finestra) {
+	void CTModOS::addValue(std::vector<Eigen::Matrix<double,NJ, 1>>& buffer_, const Eigen::Matrix<double,NJ, 1>& dato_, int win_len) {
 		buffer_.push_back(dato_);
-		if (buffer_.size() > lunghezza_finestra) {
+		if (buffer_.size() > win_len) {
 			buffer_.erase(buffer_.begin());
 		}
 	}
 
-	// Funzione per il calcolo della media
+	// Funzione per il calcolo della mean
 	Eigen::Matrix<double,NJ, 1> CTModOS::obtainMean(const std::vector<Eigen::Matrix<double,NJ, 1>>& buffer_) {
-		Eigen::Matrix<double,NJ, 1> media = Eigen::Matrix<double,NJ, 1>::Zero();
-		for (const auto& vettore : buffer_) {
-			media += vettore;
+		Eigen::Matrix<double,NJ, 1> mean = Eigen::Matrix<double,NJ, 1>::Zero();
+		for (const auto& vector : buffer_) {
+			mean += vector;
 		}
-		media /= buffer_.size();
-		return media;
+		mean /= buffer_.size();
+		return mean;
 	}
 
 	double CTModOS::deltaCompute(double a){
@@ -693,45 +687,45 @@ namespace panda_controllers{
 		// ROS_INFO_STREAM(F_ext);
 	}
 
-	Eigen::Affine3d CTModOS::computeT0EE(const Eigen::VectorXd& q){
+	// Eigen::Affine3d CTModOS::computeT0EE(const Eigen::VectorXd& q){
 	   
-		Eigen::Matrix<double, NJ, 4> DH; // matrice D-H
-		Eigen::Affine3d T0i = Eigen::Affine3d::Identity();
-		Eigen::Affine3d T0n; 
-		Eigen::Matrix<double, 4, 4> T = Eigen::Matrix<double, 4, 4>::Identity();
+	// 	Eigen::Matrix<double, NJ, 4> DH; // matrice D-H
+	// 	Eigen::Affine3d T0i = Eigen::Affine3d::Identity();
+	// 	Eigen::Affine3d T0n; 
+	// 	Eigen::Matrix<double, 4, 4> T = Eigen::Matrix<double, 4, 4>::Identity();
 
-		// Riempio sezione distanza "a"
-		DH.block(0,0,NJ,1) << 0, 0, 0,0.0825, -0.0825, 0, 0.088;   
-		// Riempio sezione angolo "alpha"
-		DH.block(0,1,NJ,1) << 0, -M_PI_2, M_PI_2, M_PI_2, -M_PI_2, M_PI_2, M_PI_2;
-		// Riempio sezione distanza "d"
-		DH.block(0,2,NJ,1) << 0.3330, 0, 0.3160, 0, 0.384, 0, 0.107; // verificato che questi valori corrispondono a DH che usa il robot in simulazione
-		// Riempio sezione angolo giunto "theta"
-		DH.block(0,3,NJ,1) = q;     
+	// 	// Riempio sezione distanza "a"
+	// 	DH.block(0,0,NJ,1) << 0, 0, 0,0.0825, -0.0825, 0, 0.088;   
+	// 	// Riempio sezione angolo "alpha"
+	// 	DH.block(0,1,NJ,1) << 0, -M_PI_2, M_PI_2, M_PI_2, -M_PI_2, M_PI_2, M_PI_2;
+	// 	// Riempio sezione distanza "d"
+	// 	DH.block(0,2,NJ,1) << 0.3330, 0, 0.3160, 0, 0.384, 0, 0.107; // verificato che questi valori corrispondono a DH che usa il robot in simulazione
+	// 	// Riempio sezione angolo giunto "theta"
+	// 	DH.block(0,3,NJ,1) = q;     
 
-		for (int i = 0; i < NJ; ++i)
-		{
-			double a_i = DH(i,0);
-			double alpha_i = DH(i,1);
-			double d_i = DH(i,2);
-			double q_i = DH(i,3);
+	// 	for (int i = 0; i < NJ; ++i)
+	// 	{
+	// 		double a_i = DH(i,0);
+	// 		double alpha_i = DH(i,1);
+	// 		double d_i = DH(i,2);
+	// 		double q_i = DH(i,3);
 
-			T << cos(q_i), -sin(q_i), 0, a_i,
-				sin(q_i)*cos(alpha_i), cos(q_i)*cos(alpha_i), -sin(alpha_i), -sin(alpha_i)*d_i,
-				sin(q_i)*sin(alpha_i), cos(q_i)*sin(alpha_i), cos(alpha_i), cos(alpha_i)*d_i,
-				0, 0, 0, 1;
+	// 		T << cos(q_i), -sin(q_i), 0, a_i,
+	// 			sin(q_i)*cos(alpha_i), cos(q_i)*cos(alpha_i), -sin(alpha_i), -sin(alpha_i)*d_i,
+	// 			sin(q_i)*sin(alpha_i), cos(q_i)*sin(alpha_i), cos(alpha_i), cos(alpha_i)*d_i,
+	// 			0, 0, 0, 1;
 
-			// Avanzamento perice i 
-			T0i.matrix() = T0i.matrix()*T;
-		}
-		T0n = T0i;
-		/*If EE system differs from frame n(Like frame hand true robot)*/
-		Eigen::Affine3d TnEE;
-		Eigen::Vector3d dnEE;
-		dnEE << 0.13, 0 , 0.035;
-		T0n.translation() = T0i.translation() + T0i.linear()*dnEE;    
-		return T0n;
-	}
+	// 		// Avanzamento perice i 
+	// 		T0i.matrix() = T0i.matrix()*T;
+	// 	}
+	// 	T0n = T0i;
+	// 	/*If EE system differs from frame n(Like frame hand true robot)*/
+	// 	Eigen::Affine3d TnEE;
+	// 	Eigen::Vector3d dnEE;
+	// 	dnEE << 0.13, 0 , 0.035;
+	// 	T0n.translation() = T0i.translation() + T0i.linear()*dnEE;    
+	// 	return T0n;
+	// }
 
 	void CTModOS::setFlagUpdate(const panda_controllers::flag::ConstPtr& msg){
 		update_param_flag = msg->flag;

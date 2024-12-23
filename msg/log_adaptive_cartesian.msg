@@ -20,3 +20,6 @@ float64[6] dot_error_pos_EE
 float64[6] Fext
 
 float64 cond
+
+float64[36] Kp
+float64[36] Kv

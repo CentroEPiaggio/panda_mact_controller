@@ -80,7 +80,6 @@ private:
     double epsilon; // information trashold 
 
     ros::Time time_now;
-    
 
     /* Robot state handle */
     franka::RobotState robot_state;
@@ -106,6 +105,7 @@ private:
     Eigen::Matrix<double, NJ, NJ> Kv_j;
     Eigen::Matrix<double, DOF, DOF> Kp_xi; 
     Eigen::Matrix<double, DOF, DOF> Kv_xi;
+	Eigen::Matrix<double, NJ, NJ> Kd;
 
     /* Gain Matrice in NullSpacde*/
     Eigen::Matrix<double, NJ, NJ> Kn;
@@ -203,7 +203,7 @@ private:
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_tau;
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_tau_d;
     std::vector<Eigen::Matrix<double, 6, 1>> buffer_dot_error;
-    const int WIN_LEN = 5;
+    const int WIN_LEN = 6;
 
     /* Parameter vector */
     Eigen::Matrix<double, NJ, 1> tau_est;
@@ -261,9 +261,9 @@ private:
     thunder_franka frankaRobot;
 
     /*Filter function*/
-    void addValue(std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_, const Eigen::Matrix<double, NJ, 1>& dato_, int lunghezza_finestra_);
+    void addValue(std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_, const Eigen::Matrix<double, NJ, 1>& dato_, int win_len_);
     Eigen::Matrix<double, NJ, 1> obtainMean(const std::vector<Eigen::Matrix<double, NJ, 1>>& buffer_);
-    // void addValueXi(std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_, const Eigen::Matrix<double, DOF, 1>& dato_, int lunghezza_finestra_);
+    // void addValueXi(std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_, const Eigen::Matrix<double, DOF, 1>& dato_, int win_len_);
     // Eigen::Matrix<double, DOF, 1> obtainMeanXi(const std::vector<Eigen::Matrix<double, DOF, 1>>& buffer_);
     
     double deltaCompute (double a);

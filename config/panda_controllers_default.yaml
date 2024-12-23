@@ -82,23 +82,24 @@ CT_mod_controller_OS:
     cutoff_frequency: 1000
     # --- Controller parameters --- #
     # stiffness terms
-    kp1: 50.0   #default: 50
-    kp2: 50.0
-    kp3: 50.0
-    kp4: 5.0
-    kp5: 5.0
-    kp6: 5.0
+    kp1: 5.0   #default: 50
+    kp2: 5.0
+    kp3: 5.0
+    kp4: 1.0
+    kp5: 1.0
+    kp6: 1.0
     # damping terms
+    gainKd: [2, 2, 2, 2, 2, 2, 2]
     kv1: 15.0   #default: 20
     kv2: 15.0
     kv3: 15.0
-    kv4: 2.0
-    kv5: 2.0
-    kv6: 2.0
+    kv4: 3.0
+    kv5: 3.0
+    kv6: 3.0
     # joints level terms, null control
-    kn1: 20.0
-    kn2: 15.0
-    kn3: 5.0
+    kn1: 5.0
+    kn2: 2.0
+    kn3: 1.0
     dt: 0.001
     gainRlinks: [0, 0, 0, 0, 0, 0, 1]                   # gain for R matrix
     gainRparam: [1, 0.1, 0.01, 1, 0.0]                  # gain stands for [mass, m_CoM, I, d1, d2]
