@@ -252,10 +252,10 @@ namespace panda_controllers{
 		// ----- Filters ----- //
 		// Filtro velocità e accelerazioni dopo calcolo errore
         addValue(buffer_dq, dot_q_curr, WIN_LEN);
-        dot_q_curr = obtainMean(buffer_dq);
-		ddot_q_curr = (dot_q_curr - dot_q_curr_old)/dt;
-		addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
-        ddot_q_curr = obtainMean(buffer_ddq);
+        dq_est = obtainMean(buffer_dq);
+		ddot_q_curr = (dq_est - dot_q_curr_old)/dt;
+		// addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
+        // ddot_q_curr = obtainMean(buffer_ddq);
         dot_q_curr_old = dot_q_curr;
 
         // dq_est.setZero();

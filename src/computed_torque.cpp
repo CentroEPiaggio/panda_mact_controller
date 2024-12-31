@@ -275,20 +275,30 @@ void ComputedTorque::update(const ros::Time&, const ros::Duration& period)
 	T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data());
 	q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.q.data());
 	dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
-	ddot_q_curr = (dot_q_curr - dot_q_curr_old) / dt;
-	dot_q_curr_old = dot_q_curr;
-	ddot_q_curr_old = ddot_q_curr;
+
+	// ----- Filters ----- //
+	// Filtro velocità e accelerazioni dopo calcolo errore
+	addValue(buffer_dq, dot_q_curr, WIN_LEN);
+	dq_est = obtainMean(buffer_dq);
+	ddot_q_curr = (dq_est - dot_q_curr_old)/dt;
+	// addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
+	// ddot_q_curr = obtainMean(buffer_ddq);
+	dot_q_curr_old = dq_est;
+
+	// ddot_q_curr = (dot_q_curr - dot_q_curr_old) / dt;
+	// dot_q_curr_old = dot_q_curr;
+	// ddot_q_curr_old = ddot_q_curr;
 
 	/* tau_J_d is the desired link-side joint torque sensor signals without gravity */
 
 	tau_J_d = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.tau_J_d.data());
 
-	/* Saturate desired velocity to avoid limits */
-	for (int i = 0; i < 7; ++i){
-		double ith_des_vel = std::fabs(command_dot_q_d(i)/q_dot_limit(i));
-		if( ith_des_vel > 1)
-		command_dot_q_d = command_dot_q_d / ith_des_vel; 
-	}
+	// /* Saturate desired velocity to avoid limits */
+	// for (int i = 0; i < 7; ++i){
+	// 	double ith_des_vel = std::fabs(command_dot_q_d(i)/q_dot_limit(i));
+	// 	if( ith_des_vel > 1)
+	// 	command_dot_q_d = command_dot_q_d / ith_des_vel; 
+	// }
 
 	/* compute joints derired effort */
 
@@ -314,11 +324,11 @@ void ComputedTorque::update(const ros::Time&, const ros::Duration& period)
 	Kp_apix = Kp;
 	Kv_apix = Kv;
 
-	// Filtro velocità e accelerazioni dopo calcolo errore
-    addValue(buffer_dq, dot_q_curr, WIN_LEN);
-    dot_q_curr = obtainMean(buffer_dq);
-    addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
-    ddot_q_curr = obtainMean(buffer_ddq);
+	// // Filtro velocità e accelerazioni dopo calcolo errore
+    // addValue(buffer_dq, dot_q_curr, WIN_LEN);
+    // dot_q_curr = obtainMean(buffer_dq);
+    // addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
+    // ddot_q_curr = obtainMean(buffer_ddq);
 
 	/* Update and Compute Regressor */
 	

@@ -55,10 +55,10 @@ slotine_controller:
     joint_names: *jointNames
     cutoff_frequency: 1000
     # --- Controller parameters --- #
-    gainLambda: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]     # gain for Lambda matrix
+    gainLambda: [2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 0.2]     # gain for Lambda matrix
     gainRlinks: [1, 1, 1, 1, 1, 1, 1]                   # gain for R matrix
     gainRparam: [1.0, 0.1, 0.01, 0.001]                 # gain proportional to [mass, mass*length, mass*length^2] 
-    gainKd: [2, 2, 2, 2, 2, 2, 2]                       # gain for Kd matrix
+    gainKd: [15, 15, 15, 15, 7.5, 7.5, 1.5]             # gain for Kd matrix
     dt: 0.001
     update_param: false
 
@@ -68,10 +68,10 @@ slotine_controller_OS:
     joint_names: *jointNames
     cutoff_frequency: 1000
     # --- Controller parameters --- #
-    gainLambda: [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]     # gain for Lambda matrix
+    gainLambda: [2.0, 2.0, 2.0, 2.0, 1.0, 1.0, 0.2]     # gain for Lambda matrix
     gainRlinks: [1, 1, 1, 1, 1, 1, 1]                   # gain for R matrix
     gainRparam: [1.0, 0.1, 0.01, 0.001]                 # gain proportional to [mass, mass*length, mass*length^2] 
-    gainKd: [2, 2, 2, 2, 2, 2, 2]                       # gain for Kd matrix
+    gainKd: [15, 15, 15, 15, 7.5, 7.5, 1.5]             # gain for Kd matrix
     dt: 0.001
     update_param: false
 

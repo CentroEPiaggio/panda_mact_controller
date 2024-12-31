@@ -5,8 +5,8 @@
     <arg name="package"         default="panda_controllers" />
     
     <!-- set -->
-    <arg name="controller_name" default="CT_mod_controller_OS" /> <!-- backstepping_controller, computed_torque_mod_controller, CT_mod_controller_OS, slotine_controller --> 
-    <arg name="command_name"    default="command_cartesian" /> <!-- command_cartesian, command_joints, com_joints_sin_node-->
+    <arg name="controller_name" default="slotine_controller" /> <!-- backstepping_controller, computed_torque_mod_controller, CT_mod_controller_OS, slotine_controller --> 
+    <arg name="command_name"    default="com_joints_sin_node" /> <!-- command_cartesian, command_joints, com_joints_sin_node-->
 
     <!-- flag -->
     <arg name="clik"            default="false" />

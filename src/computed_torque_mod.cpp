@@ -1,6 +1,7 @@
 //various library on which we work on
 #include <pluginlib/class_list_macros.h>
 #include <panda_controllers/computed_torque_mod.h> //library of the computed torque 
+#include <ros/package.h>
 
 namespace panda_controllers{
 
@@ -15,10 +16,9 @@ namespace panda_controllers{
 		    return false;
         }
 
-        /* Inizializing the Kp and Kv gains (da capire da dove si prendono valori forse dal rosbag_CT.launch) */
+        /* Inizializing the Kp and Kv gains*/
     	double kp1, kp2, kp3, kv1, kv2, kv3;
 
-        /* Chek corretta acquisizione dei parametri del computed torqued*/
         if (!node_handle.getParam("kp1", kp1) || 
 		!node_handle.getParam("kp2", kp2) ||
 		!node_handle.getParam("kp3", kp3) || 
@@ -29,7 +29,6 @@ namespace panda_controllers{
 		    return false;
 	    }
 
-        /* Assegno valori Kpi (valori assunti attraverso file panda_controllers_default.yaml quando si fa load nel launch)*/
         Kp = Eigen::MatrixXd::Identity(7, 7);
         Kp(0,0) = kp1; 
         Kp(1,1) = kp1; 
@@ -48,7 +47,7 @@ namespace panda_controllers{
         Kv(5,5) = kv2; 
         Kv(6,6) = kv3;
 
-        /* Assigning the time (dt definito come variabile double in computed_torque.h) */
+        /* Assigning the time */
 	    if (!node_handle.getParam("dt", dt)) {
 		    ROS_ERROR("Computed Torque: Could not get parameter dt!");
 		    return false;
@@ -106,31 +105,42 @@ namespace panda_controllers{
 	    	}
 	    }
 
-         /* Verifica corretta acquisizizone(da dove?) dei parametri inerziali del robot(stimati) */
-        for(int i=0; i<NJ; i++){
-            double mass, cmx, cmy, cmz, xx, xy, xz, yy, yz, zz,d1, d2;
-            if (!node_handle.getParam("link"+std::to_string(i+1)+"/mass", mass) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_x", cmx) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_y", cmy) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_z", cmz) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/Ixx", xx) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/Ixy", xy) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/Ixz", xz) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/Iyy", yy) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/Iyz", yz) ||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/Izz", zz)||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/d1", d1)||
-                !node_handle.getParam("link"+std::to_string(i+1)+"/d2", d2)){
+        //  /* Verifica corretta acquisizizone(da dove?) dei parametri inerziali del robot(stimati) */
+        // for(int i=0; i<NJ; i++){
+        //     double mass, cmx, cmy, cmz, xx, xy, xz, yy, yz, zz,d1, d2;
+        //     if (!node_handle.getParam("link"+std::to_string(i+1)+"/mass", mass) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_x", cmx) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_y", cmy) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_z", cmz) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Ixx", xx) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Ixy", xy) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Ixz", xz) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Iyy", yy) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Iyz", yz) ||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Izz", zz)||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/d1", d1)||
+        //         !node_handle.getParam("link"+std::to_string(i+1)+"/d2", d2)){
                 
-                ROS_ERROR("Computed_torque: Error in parsing inertial parameters!");
-                return 1;
-            }
-            param.segment((PARAM)*i, PARAM) << mass,cmx,cmy,cmz,xx,xy,xz,yy,yz,zz; // inserisco ad ogni passo i parametri in unica colonna in ordine
-            param_frict.segment((FRICTION)*i, FRICTION) << d1, d2;
-	    }
+        //         ROS_ERROR("Computed_torque: Error in parsing inertial parameters!");
+        //         return 1;
+        //     }
+        //     param.segment((PARAM)*i, PARAM) << mass,cmx,cmy,cmz,xx,xy,xz,yy,yz,zz; // inserisco ad ogni passo i parametri in unica colonna in ordine
+        //     param_frict.segment((FRICTION)*i, FRICTION) << d1, d2;
+	    // }
 
-        /* Credo serva a settare il parametri dinamici del sistema (nel file backsteppinh non è usato)?*/
-        thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
+        // /* Credo serva a settare il parametri dinamici del sistema (nel file backsteppinh non è usato)?*/
+        // thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
+
+		// - thunder init - //
+		// get absolute path to franka_conf.yaml file
+		std::string package_path = ros::package::getPath("panda_controllers");
+		std::string path_conf = package_path + "/config/thunder/franka.yaml";
+		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG.yaml";
+		frankaRobot.load_conf(path_conf);
+		frankaRobot.load_par_REG(path_par_REG);
+		param = frankaRobot.get_par_REG();
+		param_frict = frankaRobot.get_par_Dl();
+		// param_init = param_REG;
         
         /* Inizializing the R gains (da capire in che modo si attribuiscono i valori) to update parameters*/
 	    std::vector<double> gainRlinks(NJ), gainRparam(3);
@@ -238,7 +248,7 @@ namespace panda_controllers{
         /* Update regressor */
         // frankaRobot.setInertialParam(param_dyn); // setta i parametri dinamici dell'oggetto frankaRobot e calcola una stima del regressore di M,C e G (che può differire da quella riportata dal franka)
         frankaRobot.set_par_REG(param);
-        frankaRobot.setArguments(q_curr, dot_q_curr, command_dot_q_d, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
+        frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
 		// auto M = frankaRobot.get_M();
 		// auto C = frankaRobot.get_C();
 		// auto G = frankaRobot.get_G();
@@ -249,9 +259,10 @@ namespace panda_controllers{
 	    // Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
 	    // Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
 		// auto err_model = Y*param - (M*command_dot_dot_q_d + C*command_dot_q_d + G);
-		// auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka*command_dot_q_d + G_franka);
+		// auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
 		// std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
 		// std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
+		// std::cout << "M_franka: " << M_franka << std::endl<<std::endl;
     }
 
 
@@ -303,15 +314,14 @@ namespace panda_controllers{
         // q_est = q_est + 0.9*(q_curr - q_est);
         // dot_q_curr = (q_curr - q_est_old)/dt;
 
+		// ----- Filters ----- //
 		// Filtro velocità e accelerazioni dopo calcolo errore
         addValue(buffer_dq, dot_q_curr, WIN_LEN);
-        dot_q_curr = obtainMean(buffer_dq);
-
-		ddot_q_curr = (dot_q_curr - dot_q_curr_old)/dt;
-        dot_q_curr_old = dot_q_curr;
-
-        addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
-        ddot_q_curr = obtainMean(buffer_ddq);
+        dq_est = obtainMean(buffer_dq);
+		ddot_q_curr = (dq_est - dot_q_curr_old)/dt;
+		// addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
+        // ddot_q_curr = obtainMean(buffer_ddq);
+        dot_q_curr_old = dq_est;
 
         // dq_est.setZero();
         // ddot_q_curr_old.setZero();

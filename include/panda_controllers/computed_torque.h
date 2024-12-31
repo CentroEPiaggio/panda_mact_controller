@@ -100,6 +100,7 @@ private:
     /* Defining q_current, dot_q_current, and tau_cmd */
 
     Eigen::Matrix<double, 7, 1> q_curr;
+	Eigen::Matrix<double, 7, 1> dq_est;
     Eigen::Matrix<double, 7, 1> dot_q_curr;
     Eigen::Matrix<double, 7, 1> dot_q_curr_old;
     Eigen::Matrix<double, 7, 1> ddot_q_curr;
@@ -110,7 +111,7 @@ private:
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_dq; // Array dinamico 7D
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_ddq;
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_tau;
-    const int WIN_LEN = 6;
+    const int WIN_LEN = 3;
     
     /* Error and dot error feedback */
     

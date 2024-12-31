@@ -115,6 +115,7 @@ add_dependencies(command_cartesian
 	${${PROJECT_NAME}_EXPORTED_TARGETS} 
 	${catkin_EXPORTED_TARGETS}
 )
+
 # add_executable(CLIK_node
 # 	src/CLIK_node.cpp
 # 	src/thunder_franka.cpp
@@ -128,6 +129,7 @@ add_dependencies(command_cartesian
 # 	${${PROJECT_NAME}_EXPORTED_TARGETS} 
 # 	${catkin_EXPORTED_TARGETS}
 # )
+
 add_executable(adaptiveFlag_node
 	src/adaptiveFlag_node.cpp
 )

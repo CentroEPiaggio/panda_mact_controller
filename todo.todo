@@ -1,9 +1,10 @@
 ✔ add Slotine @done (12/22/2024, 11:46:50 PM)
 ✔ add Slotine + clik @done (12/22/2024, 11:46:51 PM)
 ✔ remove softbots @done (12/22/2024, 11:46:53 PM)
-☐ find gains slotine and slotine_OS for comparative CT
+✔ oscillations on slotine, check filters in each controller @done (12/31/2024, 3:07:48 PM)
+✔ find gains slotine and slotine_OS for comparative CT @done (12/31/2024, 3:07:53 PM)
 ✔ oscillations problem on CT_mod_OS, solved but not so stable? @done (12/23/2024, 2:38:25 PM)
-✘ each controller at the same topic, one for joints, one for cartesian @cancelled (12/23/2024, 7:39:48 AM)
+☐ each controller at the same topic, one for joints, one for cartesian
 ☐ big cleaning
 
 adaptive_throw:

@@ -3,6 +3,7 @@
 
 #include <pluginlib/class_list_macros.h>
 #include <panda_controllers/CT_mod_OS.h> //library of the computed torque 
+#include <ros/package.h>
 #include <signal.h>
 
 using namespace std;
@@ -154,34 +155,44 @@ namespace panda_controllers{
 			}
 		}
 	 
-		 /* Initial parameters acquisition */
-		for(int i=0; i<NJ; i++){
-			double mass, cmx, cmy, cmz, xx, xy, xz, yy, yz, zz, d1, d2;
-			if (!node_handle.getParam("link"+std::to_string(i+1)+"/mass", mass) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_x", cmx) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_y", cmy) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_z", cmz) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/Ixx", xx) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/Ixy", xy) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/Ixz", xz) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/Iyy", yy) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/Iyz", yz) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/Izz", zz) ||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/d1", d1)||
-				!node_handle.getParam("link"+std::to_string(i+1)+"/d2", d2)){
-				ROS_ERROR("Computed_torque: Error in parsing inertial parameters!");
-				return 1;
-			}
-			param.segment(PARAM*i, PARAM) << mass,cmx,cmy,cmz,xx,xy,xz,yy,yz,zz;
-			param_frict.segment((FRICTION)*i, FRICTION) << d1, d2;
-		}
-		// param_real << 0.73552200000000001, 0.0077354848739999999, -0.0031274395439999996, -0.033394905365999997, 0.01645526761273585, -0.00039510871831575201, -0.00084478578026577801, 0.011624582982752355, -0.00088299513761623202, 0.0049096519673609458;
+		//  /* Initial parameters acquisition */
+		// for(int i=0; i<NJ; i++){
+		// 	double mass, cmx, cmy, cmz, xx, xy, xz, yy, yz, zz, d1, d2;
+		// 	if (!node_handle.getParam("link"+std::to_string(i+1)+"/mass", mass) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_x", cmx) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_y", cmy) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_z", cmz) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Ixx", xx) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Ixy", xy) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Ixz", xz) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Iyy", yy) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Iyz", yz) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Izz", zz) ||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/d1", d1)||
+		// 		!node_handle.getParam("link"+std::to_string(i+1)+"/d2", d2)){
+		// 		ROS_ERROR("Computed_torque: Error in parsing inertial parameters!");
+		// 		return 1;
+		// 	}
+		// 	param.segment(PARAM*i, PARAM) << mass,cmx,cmy,cmz,xx,xy,xz,yy,yz,zz;
+		// 	param_frict.segment((FRICTION)*i, FRICTION) << d1, d2;
+		// }
+		// // param_real << 0.73552200000000001, 0.0077354848739999999, -0.0031274395439999996, -0.033394905365999997, 0.01645526761273585, -0.00039510871831575201, -0.00084478578026577801, 0.011624582982752355, -0.00088299513761623202, 0.0049096519673609458;
 
-		/* Param_dyn initial calculation*/
-		frankaRobot.set_par_REG(param);
+		// /* Param_dyn initial calculation*/
+		// frankaRobot.set_par_REG(param);
 
 		/* Inizializing the R gains to update parameters*/
-		std::vector<double> gainRlinks(NJ), gainRparam(3), gainKd(7);;
+		std::vector<double> gainRlinks(NJ), gainRparam(3), gainKd(7);
+
+		// - thunder init - //
+		// get absolute path to franka_conf.yaml file
+		std::string package_path = ros::package::getPath("panda_controllers");
+		std::string path_conf = package_path + "/config/thunder/franka.yaml";
+		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG.yaml";
+		frankaRobot.load_conf(path_conf);
+		frankaRobot.load_par_REG(path_par_REG);
+		param = frankaRobot.get_par_REG();
+		param_frict = frankaRobot.get_par_Dl();
 		Eigen::Matrix<double,PARAM,PARAM> Rlink;
 		Eigen::Matrix<double,FRICTION,FRICTION> Rlink_fric;
 		if (!node_handle.getParam("gainRlinks", gainRlinks) ||
@@ -305,11 +316,13 @@ namespace panda_controllers{
 		// q_opt.setZero();
 
 		// Vector center of limit's joints
-		q_c << 0.0, 0.0, 0.0, -1.5708, 0.0, 1.8675, 0.0;
+		// q_c << 0.0, 0.0, 0.0, -1.5708, 0.0, 1.8675, 0.0;
 
 		/*Limiti del franka*/
-		q_max_limit << 1.5, 0.5, 1.5, -0.5, 1.50, 2.50, 1.50;
-		q_min_limit << -1.5, -0.5, -1.5, -2.00, -1.50, -0.50, -1.50;
+		q_max_limit << 2.8973, 1.7628, 2.8973, -0.0698, 2.8973, 3.7525, 2.8973;
+		q_min_limit << -2.8973, -1.7628, -2.8973, -3.0718, -2.8973, -0.0175, -2.8973;
+		q_c << (q_min_limit + q_max_limit)/2;
+		// std::cout << "q_c: " << q_c << std::endl;
 		dq_limit << 2.1, 2.1, 2.1, 2.1, 2.6, 2.6, 2.6;
 		// ddq_limit << 15, 7.5, 10, 12.5, 15, 20, 20;
 		ddq_limit << 1.0, 1.0, 1.0, 1.0, 1.3, 1.3, 1.3;
@@ -388,9 +401,9 @@ namespace panda_controllers{
 		/* tau_J_d is the desired link-side joint torque sensor signals "without gravity" */
 		tau_J_d = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J_d.data());
 		Eigen::VectorXd tau_J_curr = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J.data()); // best in simulation
-		// tau_J = tau_J_d+G; // funziona pure
+		tau_J = tau_J_d+G;
 		// tau_J = tau_cmd;
-		tau_J = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J.data()); // best in simulation
+		// tau_J = Eigen::Map<Eigen::Matrix<double, NJ, 1>>(robot_state.tau_J.data()); // best in simulation
 		F_cont = F_ext; // contact force
 		// addValue(buffer_tau, tau_J,WIN_LEN);
 		// tau_J = obtainMean(buffer_tau);
