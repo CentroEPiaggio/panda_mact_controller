@@ -135,7 +135,7 @@ namespace panda_controllers{
 		// get absolute path to franka_conf.yaml file
 		std::string package_path = ros::package::getPath("panda_controllers");
 		std::string path_conf = package_path + "/config/thunder/franka.yaml";
-		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG.yaml";
+		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG_allWrong.yaml";
 		frankaRobot.load_conf(path_conf);
 		// frankaRobot.load_par_REG(path_par_REG);
 		param = frankaRobot.get_par_REG();
@@ -243,19 +243,19 @@ namespace panda_controllers{
         // frankaRobot.setInertialParam(param_dyn); // setta i parametri dinamici dell'oggetto frankaRobot e calcola una stima del regressore di M,C e G (che può differire da quella riportata dal franka)
         // frankaRobot.set_par_REG(param);
         frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
-		auto M = frankaRobot.get_M();
-		auto C = frankaRobot.get_C();
-		auto G = frankaRobot.get_G();
-		auto Y = frankaRobot.get_Yr();
-	    std::array<double, 49> mass_array = model_handle_->getMass();
-	    std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
-    	Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
-	    Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
-	    Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
-		auto err_model = Y*param - (M*command_dot_dot_q_d + C*command_dot_q_d + G);
-		auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
-		std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
-		std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
+		// auto M = frankaRobot.get_M();
+		// auto C = frankaRobot.get_C();
+		// auto G = frankaRobot.get_G();
+		// auto Y = frankaRobot.get_Yr();
+	    // std::array<double, 49> mass_array = model_handle_->getMass();
+	    // std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
+    	// Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
+	    // Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
+	    // Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+		// auto err_model = Y*param - (M*command_dot_dot_q_d + C*command_dot_q_d + G);
+		// auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
+		// std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
+		// std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
     }
 
 
@@ -387,7 +387,7 @@ namespace panda_controllers{
         // Y_norm_D << Y_norm, Y_D; // concatenation
         
         err_param = tau_J - Y_norm*param; // - Y_D_norm*param_frict;
-        param7 = param.segment((NJ-1)*PARAM, PARAM);
+        // param7 = param.segment((NJ-1)*PARAM, PARAM);
 
         /* se vi è stato aggiornamento, calcolo il nuovo valore che paramatri assumono secondo la seguente legge*/
         if (update_param_flag){

@@ -12,17 +12,16 @@
 <launch>
 
 	<!-- set controller -->
-	<arg name="controller_name" 	default="slotine_controller_OS" />
+	<arg name="controller_name" 	default="slotine_controller" />
 
-	<arg name="package" 			default="panda_controllers" />
+	<!-- <arg name="package" 			default="panda_controllers" /> -->
 	<arg name="arm_id" 				default="panda" doc="Name of the panda robot to spawn" />
 	
 	<!-- flag -->
 	<arg name="use_gripper" 		default="false" />
 	<arg name="rviz" 				default="false" />
 	<!-- <arg name="clik"            	default="false" /> -->
-	<arg name="rosbag_BS"			value="false" />
-	<arg name="rosbag_CT"			value="false" />
+
 	
 	<!-- to load yaml -->
 	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
@@ -44,6 +43,14 @@
 	</include>
 	
 	<!-- to start rosbag -->
+	<arg name="rosbag"				value="false" />
+	<arg name="rosbag_BS"			value="false" />
+	<arg name="rosbag_CT"			value="false" />
+	<include file="$(find panda_controllers)/launch/rosbag.launch" if="$(arg rosbag)" >
+		<arg name="controller"    	value="$(arg controller_name)" />
+    	<!-- <arg name="command_node"    value="true" />
+    	<arg name="flag_node"       value="true"/> -->
+	</include>
 	<!-- <include file="$(find panda_controllers)/launch/rosbag_BS.launch" if="$(arg rosbag_BS)" >
 		<arg name="controller_name" value="$(arg controller_name)" />
 		<arg name="clik"            value="$(arg clik)" />

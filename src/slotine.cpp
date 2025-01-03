@@ -78,7 +78,7 @@ namespace panda_controllers{
 		// get absolute path to franka_conf.yaml file
 		std::string package_path = ros::package::getPath("panda_controllers");
 		std::string path_conf = package_path + "/config/thunder/franka.yaml";
-		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG.yaml";
+		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG_allWrong.yaml";
 		frankaRobot.load_conf(path_conf);
 		// frankaRobot.load_par_REG(path_par_REG);
 		param = frankaRobot.get_par_REG();
@@ -114,7 +114,7 @@ namespace panda_controllers{
         Rlink(2,2) = Rlink(1,1);
         Rlink(3,3) = Rlink(1,1);
         Rlink(4,4) = gainRparam[2];
-        Rlink(5,5) = gainRparam[3]; // Termini misti tensore di inerzia stimati meno
+        Rlink(5,5) = gainRparam[3];
         Rlink(6,6) = Rlink(5,5);
         Rlink(7,7) = Rlink(4,4);
         Rlink(8,8) = Rlink(5,5);
@@ -129,7 +129,7 @@ namespace panda_controllers{
         Rinv.setZero();
         Rinv_fric.setZero();
         for (int i = 0; i<NJ; i++){	
-            Rinv.block(i*(PARAM), i*(PARAM), PARAM, PARAM) = gainRlinks[i]*Rlink; // block permette di fare le operazioni blocco per blocco (dubbio su che principio calcola tale inversa).
+            Rinv.block(i*(PARAM), i*(PARAM), PARAM, PARAM) = gainRlinks[i]*Rlink;
             Rinv_fric.block(i*(FRICTION), i*(FRICTION), FRICTION, FRICTION) = gainRlinks[i]*Rlink_fric; 
         }
 
@@ -138,11 +138,11 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &Slotine::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
+        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &Slotine::setCommandCB, this);
         this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &Slotine::setFlagUpdate, this);
         
-        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging", 1); //dà informazione a topic loggin l'errore che si commette 
-        this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1); //dà informazione sulla configurazione usata
+        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging", 1);
+        this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1);
 
         /* Initialize regressor object (oggetto thunderpanda) */
         // frankaRobot.init(NJ);

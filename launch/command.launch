@@ -8,7 +8,7 @@
     <arg name="command_name"    default="com_joints_sin_node" /> <!-- command_cartesian, command_joints, com_joints_sin_node-->
 
     <!-- flag -->
-    <arg name="clik"            default="false" />
+    <!-- <arg name="clik"            default="false" /> -->
     <arg name="flag_node"       default="false" />
 
     <group ns="controller">
@@ -18,7 +18,7 @@
         <!-- load command -->
         <node pkg="$(arg package)"  name="$(arg command_name)" type="$(arg command_name)" output="screen"/>
         <!-- load clik -->
-        <node pkg="$(arg package)"  name="CLIK_node" type="CLIK_node" output="screen" if="$(arg clik)"/>
+        <!-- <node pkg="$(arg package)"  name="CLIK_node" type="CLIK_node" output="screen" if="$(arg clik)"/> -->
          <!-- load opt -->
         <!-- <node pkg="$(arg package)"  name="command_opt" type="command_opt" output="screen" if="$(arg command_opt)"/> -->
         <!-- load adaptiveFlag -->

@@ -1,0 +1,52 @@
+<?xml version="1.0"?>
+<!-- launch rosbag and command -->
+<launch>
+
+    <arg name="package"         default="panda_controllers" />
+    
+    <!-- load -->
+	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
+
+    <!-- flags -->
+	<arg name="controller"    	default="slotine" />
+    <arg name="command_node"    default="true" />
+    <arg name="flag_node"       default="true"/>
+    
+    <!-- rosbag file name -->
+    <arg name="gainLambda"  default="L-2-1-0.2"/>
+    <arg name="gainKd"      default="Kd-15-7.5-1.5"/>
+	<arg name="gainKp"  	default="Kp-30-15-3"/>
+    <arg name="gainKv"      default="Kv-15-7.5-1.5"/>
+	<arg name="gainR"       default="R-1-01-001-0001"/>
+    <arg name="adapt"       default="adp-$(arg flag_node)"/>
+    <arg name="traj_type"   default="liss"/> <!-- liss - circ - minjerk -->
+    <arg name="param_off"   default="p_zero"/>  <!-- p0, p2, p5, p10, p20 -->
+    <arg name="gain_joints"     default="$(arg gainKp)_$(arg gainKv)_$(arg gainR)"/>
+	<arg name="gain_cartesian"	default="$(arg gainLambda)_$(arg gainKd)_$(arg gainR)"/>
+	<arg name="gains"	default="$(arg gain_joints)"/>
+
+	<!-- rosbag -->
+    <arg name="t1"          value="/controller/current_config"/>
+    <arg name="t2"          value="/controller/logging"/>
+    <arg name="t3"          value="/controller/command_cartesian"/>
+	<arg name="t4"          value="/controller/command_joints"/>
+    <arg name="t5"          value="/joint_states"/>
+    <arg name="topics"      value="$(arg t1) $(arg t2) $(arg t3) $(arg t4) $(arg t5)"/>
+
+	<arg name="bag_path"    default="$(find panda_controllers)/rosbag"/>
+    <arg name="bag_name"    default="$(arg bag_path)/$(arg controller)_$(arg traj_type)_$(arg adapt)_$(arg param_off)_$(arg gains)"/>
+    <arg name="duration"    default="60"/>
+    
+    <node pkg="rosbag" type="record" name="bag_recorder" output="screen" 
+        args="--duration=$(arg duration) -O $(arg bag_name) $(arg topics)">
+    </node>
+
+    <group ns="controller">
+        <node pkg="$(arg package)" type="adaptiveFlag_node" name="adaptiveFlag_name" output="screen" if="$(arg flag_node)" />
+    </group>
+
+    <include file="$(find panda_controllers)/launch/command.launch" if="$(arg command_node)" >
+        <!-- <arg name="controller_name" value="$(arg controller)" /> -->
+    </include>
+
+</launch>

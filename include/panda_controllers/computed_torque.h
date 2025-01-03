@@ -111,7 +111,7 @@ private:
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_dq; // Array dinamico 7D
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_ddq;
     std::vector<Eigen::Matrix<double, 7, 1>> buffer_tau;
-    const int WIN_LEN = 3;
+    const int WIN_LEN = 10;
     
     /* Error and dot error feedback */
     

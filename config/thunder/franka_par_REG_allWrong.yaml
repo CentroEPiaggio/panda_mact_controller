@@ -1,0 +1,88 @@
+# Inertial parameters referred to Denavit-Hartenberg parametrization to use with regressor matrix
+# 
+
+dynamics:
+  link1:
+    inertial:
+      mass: 5.0
+      m_CoM_x: 0.0
+      m_CoM_y: 0.0
+      m_CoM_z: 0.0
+      Ixx: 0.0
+      Ixy: 0.0
+      Ixz: 0.0
+      Iyy: 0.0
+      Iyz: 0.0
+      Izz: 0.0
+  link2:
+    inertial:
+      mass: 1.0
+      m_CoM_x: 0.0
+      m_CoM_y: 0.0
+      m_CoM_z: 0.0
+      Ixx: 0.0
+      Ixy: 0.0
+      Ixz: 0.0
+      Iyy: 0.0
+      Iyz: 0.0
+      Izz: 0.0
+  link3:
+    inertial:
+      mass: 3.0
+      m_CoM_x: 0.0
+      m_CoM_y: 0.0
+      m_CoM_z: 0.0
+      Ixx: 0.0
+      Ixy: 0.0
+      Ixz: 0.0
+      Iyy: 0.0
+      Iyz: 0.0
+      Izz: 0.0
+  link4:
+    inertial:
+      mass: 3.0
+      m_CoM_x: 0.0
+      m_CoM_y: 0.0
+      m_CoM_z: 0.0
+      Ixx: 0.0
+      Ixy: 0.0
+      Ixz: 0.0
+      Iyy: 0.0
+      Iyz: 0.0
+      Izz: 0.0
+  link5:
+    inertial:
+      mass: 1.0
+      m_CoM_x: 0.0
+      m_CoM_y: 0.0
+      m_CoM_z: 0.0
+      Ixx: 0.0
+      Ixy: 0.0
+      Ixz: 0.0
+      Iyy: 0.0
+      Iyz: 0.0
+      Izz: 0.0
+  link6:
+    inertial:
+      mass: 1.0
+      m_CoM_x: 0.0
+      m_CoM_y: 0.0
+      m_CoM_z: 0.0
+      Ixx: 0.0
+      Ixy: 0.0
+      Ixz: 0.0
+      Iyy: 0.0
+      Iyz: 0.0
+      Izz: 0.0
+  link7:
+    inertial:
+      mass: 1.0
+      m_CoM_x: 0.0
+      m_CoM_y: 0.0
+      m_CoM_z: 0.0
+      Ixx: 0.0
+      Ixy: 0.0
+      Ixz: 0.0
+      Iyy: 0.0
+      Iyz: 0.0
+      Izz: 0.0
