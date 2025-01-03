@@ -57,10 +57,10 @@ int main(int argc, char **argv)
 	ros::Rate loop_rate(frequency); 
 	
 	/* Publisher */
-	ros::Publisher pub_cmd_cartesian = node_handle.advertise<panda_controllers::desTrajEE>("command_cartesian", 1);
+	ros::Publisher pub_cmd_cartesian = node_handle.advertise<panda_controllers::desTrajEE>("/controller/command_cartesian", 1);
 	
 	/* Subscriber */
-	ros::Subscriber sub_pose = node_handle.subscribe<panda_controllers::point>("current_config", 1, &poseCallback);
+	ros::Subscriber sub_pose = node_handle.subscribe<panda_controllers::point>("/controller/current_config", 1, &poseCallback);
 
 	/* Message for /backstepping_controller/command */
 	panda_controllers::desTrajEE msg_cartesian;

@@ -11,6 +11,9 @@
 	- the trajectory on rviz -->
 <launch>
 
+	<!-- set controller -->
+	<arg name="controller_name" 	default="slotine_controller_OS" />
+
 	<arg name="package" 			default="panda_controllers" />
 	<arg name="arm_id" 				default="panda" doc="Name of the panda robot to spawn" />
 	
@@ -20,13 +23,10 @@
 	<!-- <arg name="clik"            	default="false" /> -->
 	<arg name="rosbag_BS"			value="false" />
 	<arg name="rosbag_CT"			value="false" />
-    
-	<!-- set controller -->
-	<arg name="controller_name" 	default="slotine_controller" />
 	
 	<!-- to load yaml -->
 	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
-	<group ns="$(arg controller_name)">
+	<group ns="controller">
 		<rosparam command="load" 	file="$(find panda_controllers)/config/inertial/inertial_DH_REG.yaml" />
 	</group>
 

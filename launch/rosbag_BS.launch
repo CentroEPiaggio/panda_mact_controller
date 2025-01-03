@@ -13,9 +13,9 @@
     <arg name="flag_node"       default="false"/>
 
     <!-- rosbag -->
-    <arg name="t1"          value="/$(arg controller)/current_config"/>
-    <arg name="t2"          value="/$(arg controller)/logging"/>
-    <arg name="t3"          value="/$(arg controller)/command_cartesian"/>
+    <arg name="t1"          value="/controller/current_config"/>
+    <arg name="t2"          value="/controller/logging"/>
+    <arg name="t3"          value="/controller/command_cartesian"/>
     <arg name="t4"          value="/joint_states"/>
     <arg name="topics"      value="$(arg t1) $(arg t2) $(arg t3) $(arg t4)"/>
 
@@ -37,7 +37,7 @@
         args="--duration=$(arg duration) -O $(arg bag_name)_$(arg traj_type)_$(arg adapt)_$(arg param_off) $(arg topics)">
     </node><!-- duration=$(arg duration) -O $(arg bag_name)_$(arg traj_type)_$(arg adapt)_$(arg gain)_$(arg param_off) $(arg topics)" -->
 
-    <group ns="$(arg controller)">
+    <group ns="controller">
         <node pkg="$(arg package)" type="adaptiveFlag_node" name="adaptiveFlag_name" output="screen" if="$(arg flag_node)" />
     </group>
 

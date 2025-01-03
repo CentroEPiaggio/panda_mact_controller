@@ -141,12 +141,12 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/slotine_controller_OS/command_cartesian", 1, &Slotine_OS::setCommandCB, this);
-        // this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_controller_OS/command_joints", 1, &Slotine_OS::setCommandCB, this);
-        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_controller_OS/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
+		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/controller/command_cartesian", 1, &Slotine_OS::setCommandCB, this);
+        // this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &Slotine_OS::setCommandCB, this);
+        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
         
-        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1); //dà informazione a topic loggin l'errore che si commette 
-        this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
+        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging", 1); //dà informazione a topic loggin l'errore che si commette 
+        this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1); //dà informazione sulla configurazione usata
 
         /* Initialize regressor object (oggetto thunderpanda) */
         // frankaRobot.init(NJ);
@@ -275,7 +275,7 @@ namespace panda_controllers{
 		ddot_q_curr = (dq_est - dot_q_curr_old)/dt;
 		// addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
         // ddot_q_curr = obtainMean(buffer_ddq);
-        dot_q_curr_old = dot_q_curr;
+        dot_q_curr_old = dq_est;
 
         // dq_est.setZero();
         // ddot_q_curr_old.setZero();

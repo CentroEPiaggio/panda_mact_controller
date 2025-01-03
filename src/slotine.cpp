@@ -138,11 +138,11 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/slotine_controller/command_joints", 1, &Slotine::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
-        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/slotine_controller/adaptiveFlag", 1, &Slotine::setFlagUpdate, this);
+        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &Slotine::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
+        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &Slotine::setFlagUpdate, this);
         
-        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1); //dà informazione a topic loggin l'errore che si commette 
-        this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
+        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging", 1); //dà informazione a topic loggin l'errore che si commette 
+        this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1); //dà informazione sulla configurazione usata
 
         /* Initialize regressor object (oggetto thunderpanda) */
         // frankaRobot.init(NJ);
@@ -256,7 +256,7 @@ namespace panda_controllers{
 		ddot_q_curr = (dq_est - dot_q_curr_old)/dt;
 		// addValue(buffer_ddq, ddot_q_curr, WIN_LEN);
         // ddot_q_curr = obtainMean(buffer_ddq);
-        dot_q_curr_old = dot_q_curr;
+        dot_q_curr_old = dq_est;
 
         // dq_est.setZero();
         // ddot_q_curr_old.setZero();
@@ -351,7 +351,6 @@ namespace panda_controllers{
         // ROS_INFO_STREAM(param_tot);
 
         /* update dynamic for control law */
-        // thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);	// conversion of updated parameters, nuovo oggetto thunderpsnda
         frankaRobot.set_par_REG(param);
         Mest = frankaRobot.get_M();
         Cest = frankaRobot.get_C();
@@ -393,13 +392,13 @@ namespace panda_controllers{
 		fillMsg(msg_log.Kp, Kp_vect);
 		fillMsg(msg_log.Kv, Kv_vect);
 
-        msg_config.header.stamp  = time_now; // publico tempo attuale nodo
+        msg_config.header.stamp  = time_now;
         msg_config.xyz.x = T0EE.translation()(0); 
         msg_config.xyz.y = T0EE.translation()(1);
         msg_config.xyz.z = T0EE.translation()(2);
 
-        this->pub_err_.publish(msg_log); // publico su nodo logging, i valori dei parametri aggiornati con la legge di controllo, e e dot_e (in pratica il vettori di stato del problema aumentato) 
-        this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?
+        this->pub_err_.publish(msg_log);
+        this->pub_config_.publish(msg_config);
     }
 
     void Slotine::stopping(const ros::Time&)

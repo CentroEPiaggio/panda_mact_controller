@@ -52,12 +52,11 @@ int main(int argc, char **argv)
     // double amp_2 = 0.60;
 
     /* Publisher */
-	ros::Publisher pub_des_jointState = node_handle.advertise<sensor_msgs::JointState>("/slotine_controller/command_joints", 1); 
-    ros::Publisher pub_flag_joints = node_handle.advertise<panda_controllers::flag>("/slotine_controller/jointsFlag", 1);
-
+	ros::Publisher pub_des_jointState = node_handle.advertise<sensor_msgs::JointState>("/controller/command_joints", 1); 
+    ros::Publisher pub_flag_joints = node_handle.advertise<panda_controllers::flag>("/controller/jointsFlag", 1);
 
     /* Subscriber */
-	ros::Subscriber sub_pose = node_handle.subscribe<panda_controllers::point>("current_config", 1, &poseCallback);
+	ros::Subscriber sub_pose = node_handle.subscribe<panda_controllers::point>("/controller/current_config", 1, &poseCallback);
 
     sensor_msgs::JointState command;
     panda_controllers::flag flag_joints;
@@ -88,7 +87,7 @@ int main(int argc, char **argv)
     sin_par.frequencies.resize(NJ);
     sin_par.phases.resize(NJ);
 	sin_par.offsets = q_c;
-	sin_par.amplitudes << 1, 0.6, 1, 0.7, 1, 0.6, 1;
+	sin_par.amplitudes << 1.2, 0.5, 1.2, 0.5, 1.2, 0.6, 1.2;
 	sin_par.frequencies << 0.1, 0.15, 0.18, 0.2, 0.3, 0.09, 0.23;
 	sin_par.phases << 0, 0, 0, 0, 0, 0, 0;
 

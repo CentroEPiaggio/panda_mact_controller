@@ -137,17 +137,16 @@ namespace panda_controllers{
 		std::string path_conf = package_path + "/config/thunder/franka.yaml";
 		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG.yaml";
 		frankaRobot.load_conf(path_conf);
-		frankaRobot.load_par_REG(path_par_REG);
+		// frankaRobot.load_par_REG(path_par_REG);
 		param = frankaRobot.get_par_REG();
 		param_frict = frankaRobot.get_par_Dl();
 		// param_init = param_REG;
         
-        /* Inizializing the R gains (da capire in che modo si attribuiscono i valori) to update parameters*/
-	    std::vector<double> gainRlinks(NJ), gainRparam(3);
+        /* Inizializing the R gains to update parameters*/
+	    std::vector<double> gainRlinks(NJ), gainRparam(4);
 	    Eigen::Matrix<double,PARAM,PARAM> Rlink;
         Eigen::Matrix<double,FRICTION,FRICTION> Rlink_fric;
 
-        // Gestione di errore nel caso in cui parametri non trovati dal nodo di controllo
 	    if (!node_handle.getParam("gainRlinks", gainRlinks) ||
 	    	!node_handle.getParam("gainRparam", gainRparam) ||
 	    	!node_handle.getParam("update_param", update_param_flag)) {
@@ -187,11 +186,11 @@ namespace panda_controllers{
         q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
         /*Start command subscriber and publisher */
-        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/computed_torque_mod_controller/command_joints", 1, &ComputedTorqueMod::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
-        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/computed_torque_mod_controller/adaptiveFlag", 1, &ComputedTorqueMod::setFlagUpdate, this);
+        this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &ComputedTorqueMod::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
+        this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &ComputedTorqueMod::setFlagUpdate, this);
         
-        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1); //dà informazione a topic loggin l'errore che si commette 
-        this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //dà informazione sulla configurazione usata
+        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging", 1); //dà informazione a topic loggin l'errore che si commette 
+        this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1); //dà informazione sulla configurazione usata
 
         /* Initialize regressor object (oggetto thunderpanda) */
         // frankaRobot.init(NJ);
@@ -237,44 +236,37 @@ namespace panda_controllers{
 	    dot_error.setZero();
         param_tot.setZero();
 
-        // /* Defining the NEW gains */
-        // Kp = Kp;
-        // Kv = Kv;
-
-        
         dot_param.setZero();
         dot_param_frict.setZero();
         
         /* Update regressor */
         // frankaRobot.setInertialParam(param_dyn); // setta i parametri dinamici dell'oggetto frankaRobot e calcola una stima del regressore di M,C e G (che può differire da quella riportata dal franka)
-        frankaRobot.set_par_REG(param);
+        // frankaRobot.set_par_REG(param);
         frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, command_dot_dot_q_d); // setta i valori delle variabili di giunto di interresse e calcola il regressore Y attuale (oltre a calcolare jacobiani e simili e in maniera ridondante M,C,G)
-		// auto M = frankaRobot.get_M();
-		// auto C = frankaRobot.get_C();
-		// auto G = frankaRobot.get_G();
-		// auto Y = frankaRobot.get_Yr();
-	    // std::array<double, 49> mass_array = model_handle_->getMass();
-	    // std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
-    	// Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
-	    // Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
-	    // Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
-		// auto err_model = Y*param - (M*command_dot_dot_q_d + C*command_dot_q_d + G);
-		// auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
-		// std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
-		// std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
-		// std::cout << "M_franka: " << M_franka << std::endl<<std::endl;
+		auto M = frankaRobot.get_M();
+		auto C = frankaRobot.get_C();
+		auto G = frankaRobot.get_G();
+		auto Y = frankaRobot.get_Yr();
+	    std::array<double, 49> mass_array = model_handle_->getMass();
+	    std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
+    	Eigen::MatrixXd M_franka = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
+	    Eigen::MatrixXd C_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
+	    Eigen::MatrixXd G_franka = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+		auto err_model = Y*param - (M*command_dot_dot_q_d + C*command_dot_q_d + G);
+		auto err_franka = Y*param - (M_franka*command_dot_dot_q_d + C_franka + G_franka);
+		std::cout << "model error: " << err_model.transpose() << std::endl<<std::endl;
+		std::cout << "franka error: " << err_franka.transpose() << std::endl<<std::endl;
     }
 
 
     void ComputedTorqueMod::update(const ros::Time&, const ros::Duration& period){
         
-        /* Solito mappaggio già visto nell'inizializzazione*/
         franka::RobotState robot_state = state_handle_->getRobotState();
 	    // std::array<double, 49> mass_array = model_handle_->getMass();
 	    // std::array<double, 7> coriolis_array = model_handle_->getCoriolis();
     	// M = Eigen::Map<Eigen::Matrix<double, 7, 7>>(mass_array.data());
 	    // C = Eigen::Map<Eigen::Matrix<double, 7, 1>>(coriolis_array.data());
-	    // G = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
+	    G = Eigen::Map<Eigen::Matrix<double, 7, 1>> (model_handle_->getGravity().data());
 
 		/* Actual position and velocity of the joints */
         // T0EE = Eigen::Matrix4d::Map(robot_state.O_T_EE.data()); // matrice di trasformazione omogenea che mi fa passare da s.d.r base a s.d.r EE
@@ -386,11 +378,11 @@ namespace panda_controllers{
         // ROS_INFO_STREAM("Y_D:" << Y_D << "Dest:" << Dest);
 
         /*Gravità compensata non va nel calcolo del residuo*/
-        tau_J = tau_cmd;
-        addValue(buffer_tau, tau_J, WIN_LEN);
+        tau_J = tau_J_d + G;
+        // addValue(buffer_tau, tau_J, WIN_LEN);
 
         // Media dei dati nella finestra del filtro
-        tau_J = obtainMean(buffer_tau);
+        // tau_J = obtainMean(buffer_tau);
         // Y_mod_D << Y_mod, Y_D; // concatenation
         // Y_norm_D << Y_norm, Y_D; // concatenation
         
@@ -414,19 +406,15 @@ namespace panda_controllers{
         // ROS_INFO_STREAM(param_tot);
 
         /* update dynamic for control law */
-        // thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);	// conversion of updated parameters, nuovo oggetto thunderpsnda
-        frankaRobot.set_par_REG(param); // capire se usare questa variante si setArguments è la stessa cosa
-        Mest = frankaRobot.get_M(); // matrice di massa stimata usando regressore
-        Cest = frankaRobot.get_C(); // matrice di coriolis stimata usando regressore
-        Gest = frankaRobot.get_G(); // modello di gravità stimata usando regressore
+        frankaRobot.set_par_REG(param);
+        Mest = frankaRobot.get_M();
+        Cest = frankaRobot.get_C();
+        Gest = frankaRobot.get_G();
 
         /* command torque to joint */
-        tau_cmd = Mest * command_dot_dot_q_d + Cest * command_dot_q_d  + Kp * error + Kv * dot_error + Gest;// + Dest*command_dot_q_d; // perchè si sottrae G a legge controllo standard?  legge controllo computed torque (usare M,C e G dovrebbe essere la stessa cosa)
-        // tau_cmd = Mest * command_dot_dot_q_d + Cest * dot_q_curr  + Kp * error + Kv * dot_error + Gest - G; // perchè si sottrae G a legge controllo standard?  legge controllo computed torque (usare M,C e G dovrebbe essere la stessa cosa)
+        tau_cmd = Mest * command_dot_dot_q_d + Cest * command_dot_q_d  + Kp * error + Kv * dot_error + Gest;
 
-
-
-        // /* Verify the tau_cmd not exceed the desired joint torque value tau_J_d */
+	    // /* Verify the tau_cmd not exceed the desired joint torque value tau_J_d */
 	    tau_cmd = saturateTorqueRate(tau_cmd, tau_J_d+G);
 
         /* Set the command for each joint */
@@ -434,8 +422,7 @@ namespace panda_controllers{
 	    	joint_handles_[i].setCommand(tau_cmd[i]-G[i]);
 	    }
 
-        /* Publish messages (errore di posizione e velocità, coppia comandata ai giunti, parametri dinamici dei vari giunti stimati)*/
-
+        /* Publish messages*/
 		Eigen::Map<Eigen::MatrixXd> Kp_vect(Kp.data(), 49,1);
 		Eigen::Map<Eigen::MatrixXd> Kv_vect(Kv.data(), 49,1);
 
@@ -453,7 +440,7 @@ namespace panda_controllers{
         fillMsgLink(msg_log.link5, param_tot.segment(48, PARAM+FRICTION));
         fillMsgLink(msg_log.link6, param_tot.segment(60, PARAM+FRICTION));
         fillMsgLink(msg_log.link7, param_tot.segment(72, PARAM+FRICTION));
-        fillMsg(msg_log.tau_cmd, err_param);
+        fillMsg(msg_log.tau_cmd, tau_cmd);
         fillMsg(msg_log.ddot_q_curr, ddot_q_curr);
 		fillMsg(msg_log.Kp, Kp_vect);
 		fillMsg(msg_log.Kv, Kv_vect);
@@ -463,8 +450,8 @@ namespace panda_controllers{
         msg_config.xyz.y = T0EE.translation()(1);
         msg_config.xyz.z = T0EE.translation()(2);
 
-        this->pub_err_.publish(msg_log); // publico su nodo logging, i valori dei parametri aggiornati con la legge di controllo, e e dot_e (in pratica il vettori di stato del problema aumentato) 
-        this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?
+        this->pub_err_.publish(msg_log);
+        this->pub_config_.publish(msg_config);
     }
 
     void ComputedTorqueMod::stopping(const ros::Time&)
@@ -472,7 +459,7 @@ namespace panda_controllers{
 	//TO DO
     }
 
-    // Funzione per l'aggiunta di un dato al buffer_dq
+    // add value to buffer
     void ComputedTorqueMod::addValue(std::vector<Eigen::Matrix<double,7, 1>>& buffer_, const Eigen::Matrix<double,7, 1>& dato_, int win_len) {
         buffer_.push_back(dato_);
         if (buffer_.size() > win_len) {
@@ -480,7 +467,7 @@ namespace panda_controllers{
         }
     }
 
-    // Funzione per il calcolo della mean
+    // compute mean from buffer
     Eigen::Matrix<double,7, 1> ComputedTorqueMod::obtainMean(const std::vector<Eigen::Matrix<double,7, 1>>& buffer_) {
         Eigen::Matrix<double,7, 1> mean = Eigen::Matrix<double,7, 1>::Zero();
         for (const auto& vector : buffer_) {

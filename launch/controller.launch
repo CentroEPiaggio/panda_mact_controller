@@ -1,0 +1,33 @@
+<?xml version="1.0" ?>
+<!-- to use external controller on real panda
+	- controllers: 
+		- backstepping_controller
+		- computed_torque_controller
+		- computed_torque_mod_controller
+		- CT_mod_controller_OS
+		- slotine_controller
+		- slotine_controller_OS
+-->
+<launch>
+
+	<!-- set controller -->
+	<arg name="controller_name" 	default= "computed_torque_mod_controller" />
+
+	<!-- franka stuff -->
+	<arg name="robot_ip" default="172.16.0.104"/>
+	<arg name="load_gripper" default="false" />
+	<include file="$(find franka_control)/launch/franka_control.launch" >
+		<arg name="robot_ip" value="$(arg robot_ip)" />
+		<arg name="load_gripper" value="$(arg load_gripper)" />
+	</include>
+
+	<!-- load initial guess parameters, not loaded from here, taken internally from conf!! (check it) -->
+	<group ns="controller">
+		<rosparam command="load" 	file="$(find panda_controllers)/config/inertial/inertial_DH_REG.yaml" />
+	</group>
+
+	<!-- load controller parameters -->
+	<rosparam command="load" file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
+	<node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false" output="screen" args="$(arg controller_name)"/>
+
+</launch>

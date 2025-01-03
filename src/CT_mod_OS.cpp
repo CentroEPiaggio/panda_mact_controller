@@ -239,19 +239,19 @@ namespace panda_controllers{
 		tau_limit << 87, 87, 87, 87, 12, 12, 12;
 		
 		/*Start command subscriber and publisher */
-		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/CT_mod_controller_OS/command_cartesian", 1, &CTModOS::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
-		this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/CT_mod_controller_OS/adaptiveFlag", 1, &CTModOS::setFlagUpdate, this); // Set adaptive_flag to true  
-		// this->sub_command_j_ = node_handle.subscribe<sensor_msgs::JointState> ("/CT_mod_controller_OS/command_joints", 1, &CTModOS::setCommandCBJ, this);
-		// this->sub_flag_opt_ = node_handle.subscribe<panda_controllers::flag>("/CT_mod_controller_OS/optFlag", 1, &CTModOS::setFlagJoints, this);
+		this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/controller/command_cartesian", 1, &CTModOS::setCommandCB, this);   //it verify with the callback(setCommandCB) that the command joint has been received
+		this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &CTModOS::setFlagUpdate, this); // Set adaptive_flag to true  
+		// this->sub_command_j_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &CTModOS::setCommandCBJ, this);
+		// this->sub_flag_opt_ = node_handle.subscribe<panda_controllers::flag>("/controller/optFlag", 1, &CTModOS::setFlagJoints, this);
 		// this->sub_joints =  node_handle.subscribe<sensor_msgs::JointState>("/franka_state_controller/joint_states", 1, &CTModOS::jointsCallbackT, this);
-		this->sub_impedance_gains_ = node_handle.subscribe<panda_controllers::impedanceGain>("/CT_mod_controller_OS/impedanceGains", 1, &CTModOS::setGains, this);
-		this->sub_command_rpy_ = node_handle.subscribe<panda_controllers::rpy>("/CT_mod_controller_OS/command_rpy", 1, &CTModOS::setRPYcmd, this);
-		this->sub_flag_resetAdp = node_handle.subscribe<panda_controllers::flag>("/CT_mod_controller_OS/resetFlag", 1,&CTModOS::setResetFlag, this);
+		this->sub_impedance_gains_ = node_handle.subscribe<panda_controllers::impedanceGain>("/controller/impedanceGains", 1, &CTModOS::setGains, this);
+		this->sub_command_rpy_ = node_handle.subscribe<panda_controllers::rpy>("/controller/command_rpy", 1, &CTModOS::setRPYcmd, this);
+		this->sub_flag_resetAdp = node_handle.subscribe<panda_controllers::flag>("/controller/resetFlag", 1,&CTModOS::setResetFlag, this);
 		/*Topic for Fest*/
 		this->sub_Fext_ = node_handle.subscribe<geometry_msgs::WrenchStamped>("/franka_state_controller/F_ext", 1, &CTModOS::callbackFext, this);
 
-		this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_cartesian> ("logging", 1); //Public error variables and tau
-		this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1); //Public Xi,dot_XI,ddot_XI
+		this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_cartesian> ("/controller/logging", 1); //Public error variables and tau
+		this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1); //Public Xi,dot_XI,ddot_XI
 		
 		/*Initialize Stack Procedure*/
 		// l = 0;

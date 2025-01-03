@@ -27,8 +27,8 @@ int main(int argc, char** argv) {
     ros::Publisher vanishing_pub = node_handle.advertise<visualization_msgs::Marker>("vanishing_marker", 1);
     ros::Publisher marker_pub = node_handle.advertise<visualization_msgs::Marker>("trajectory_marker", 1);
     
-    ros::Subscriber config_sub = node_handle.subscribe<panda_controllers::point>("current_config", 1, &configCallback);   
-    // ros::Subscriber config_sub = node_handle.subscribe<panda_controllers::point>("/computed_torque_mod_controller/current_config", 1, &configCallback);
+    ros::Subscriber config_sub = node_handle.subscribe<panda_controllers::point>("/controller/current_config", 1, &configCallback);   
+    // ros::Subscriber config_sub = node_handle.subscribe<panda_controllers::point>("/controller/current_config", 1, &configCallback);
     
     visualization_msgs::Marker total_traj;
     total_traj.header.frame_id = "panda_link0";

@@ -50,7 +50,7 @@ int main(int argc, char **argv)
 	ros::Rate loop_rate(frequency); // 100 Hz,10 volte più lento del controllore (messaggio più lento di nodo di controllo che ha frequenza di campionamento di 1000Hz)
 
 	/* Publisher */
-	ros::Publisher pub_cmd = node_handle.advertise<sensor_msgs::JointState>("command_joints", 1); // invio messaggio di comando(elemento di collegamento con il nodo di controllo)
+	ros::Publisher pub_cmd = node_handle.advertise<sensor_msgs::JointState>("/controller/command_joints", 1); // invio messaggio di comando(elemento di collegamento con il nodo di controllo)
 
 	/* Subscriber */
 	ros::Subscriber sub_joints =  node_handle.subscribe<sensor_msgs::JointState>("/franka_state_controller/joint_states", 1,  &jointsCallback);

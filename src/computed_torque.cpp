@@ -193,11 +193,11 @@ bool ComputedTorque::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
 	q_dot_limit << 2.175, 2.175, 2.175, 2.175, 2.61, 2.61, 2.61; 
 
 	/*Start command subscriber */
-	this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("command_joints", 1, &ComputedTorque::setCommandCB, this);   //it verify with the callback that the command has been received
-	this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("adaptiveFlag", 1, &ComputedTorque::setFlagUpdate, this);  
-	this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("logging", 1);
-	this->pub_config_ = node_handle.advertise<panda_controllers::point>("current_config", 1);
-	this->pub_deb_ = node_handle.advertise<panda_controllers::Vec7D>("debug",1);
+	this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &ComputedTorque::setCommandCB, this);   //it verify with the callback that the command has been received
+	this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &ComputedTorque::setFlagUpdate, this);  
+	this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging", 1);
+	this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1);
+	this->pub_deb_ = node_handle.advertise<panda_controllers::Vec7D>("/controller/debug",1);
 
 	/* Initialize regressor object */
 	// frankaRobot.init(NJ);

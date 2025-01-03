@@ -14,7 +14,7 @@
 	<arg name="controller_name" 	default= "CT_mod_controller_OS" /> <!-- backstepping_controller, computed_torque_controller, computed_torque_mod_controller, CT_mod_controller_OS, slotine_controller -->
 
   <!-- load initial guess parameters -->
-  <group ns="$(arg controller_name)">
+  <group ns="controller">
     <rosparam command="load" 	file="$(find panda_controllers)/config/inertial/inertial_DH_REG.yaml" />
   </group>
 

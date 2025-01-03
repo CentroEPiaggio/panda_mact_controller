@@ -135,10 +135,10 @@ bool Backstepping::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle& 
 
 	/*Start command subscriber and advertise */
 
-	this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("command_cartesian", 1, &Backstepping::setCommandCB, this);   //it verify with the callback that the command has been received
-	this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("adaptiveFlag", 1, &Backstepping::setFlagUpdate, this);   //it verify with the callback that the command has been received
-	this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_cartesian> ("logging", 1);
-	this->pub_config_ = node_handle.advertise<panda_controllers::point> ("current_config", 1);
+	this->sub_command_ = node_handle.subscribe<panda_controllers::desTrajEE> ("/controller/command_cartesian", 1, &Backstepping::setCommandCB, this);   //it verify with the callback that the command has been received
+	this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &Backstepping::setFlagUpdate, this);   //it verify with the callback that the command has been received
+	this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_cartesian> ("/controller/logging", 1);
+	this->pub_config_ = node_handle.advertise<panda_controllers::point> ("/controller/current_config", 1);
 	
 	/* Initialize regressor object */
 

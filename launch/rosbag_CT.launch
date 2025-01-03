@@ -13,10 +13,10 @@
     <arg name="homing"              default="false" />
 
     <!-- rosbag -->
-    <arg name="t1"      value="/computed_torque_controller/current_config"/>
+    <arg name="t1"      value="/controller/current_config"/>
     <arg name="t2"      value="/joint_states"/>
-    <arg name="t3"      value="/computed_torque_controller/command_joints"/>
-    <arg name="t4"      value="/computed_torque_controller/logging"/>
+    <arg name="t3"      value="/controller/command_joints"/>
+    <arg name="t4"      value="/controller/logging"/>
     <arg name="topics"  value="$(arg t1) $(arg t2) $(arg t3) $(arg t4)"/>
    
     <arg name="bag_path"    default="$(find panda_controllers)/rosbag"/>
@@ -34,7 +34,7 @@
         args="--duration=$(arg duration) -O $(arg bag_name)_$(arg traj_type)_$(arg adapt)_$(arg param_off) $(arg topics)">
     </node>
     
-    <group ns="computed_torque_controller">
+    <group ns="controller">
         <rosparam command="load" file="$(arg yaml_file)" />
         <node pkg="panda_controllers" type="adaptiveFlag_node" name="adaptiveFlag_name" output="screen" if="$(arg flag_node)" />
         <node pkg="panda_controllers" type="command_joints_node" name="command_joints_node" output="screen" if="$(arg homing)" />

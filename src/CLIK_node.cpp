@@ -52,10 +52,10 @@ int main(int argc, char **argv)
 	ros::Rate loop_rate(frequency); 
 	
 	/* Publisher */
-	ros::Publisher pub_des_jointState = node_handle.advertise<sensor_msgs::JointState>("command_joints", 1000);
+	ros::Publisher pub_des_jointState = node_handle.advertise<sensor_msgs::JointState>("/controller/command_joints", 1000);
 	
 	/* Subscriber */
-	ros::Subscriber sub_des_pose = node_handle.subscribe<panda_controllers::desTrajEE>("command_cartesian", 1, &desPoseCallback);
+	ros::Subscriber sub_des_pose = node_handle.subscribe<panda_controllers::desTrajEE>("/controller/command_cartesian", 1, &desPoseCallback);
 
 	/* Message for /computed_torque_controller/command */
 	sensor_msgs::JointState clik;

@@ -5,10 +5,10 @@
     <arg name="record_rosbag"       default="false" />
 
     <!-- rosbag -->
-    <arg name="t1"      value="/CT_mod_controller_OS/current_config"/>
-    <arg name="t2"      value="/CT_mod_controller_OS/debug"/>
-    <arg name="t3"      value="/CT_mod_controller_OS/command_cartesian"/>
-    <arg name="t4"      value="/CT_mod_controller_OS/logging"/>
+    <arg name="t1"      value="/controller/current_config"/>
+    <arg name="t2"      value="/controller/debug"/>
+    <arg name="t3"      value="/controller/command_cartesian"/>
+    <arg name="t4"      value="/controller/logging"/>
     <arg name="topics"  value="$(arg t1) $(arg t2) $(arg t3) $(arg t4)"/>
    
     <arg name="bag_path"    default="$(find panda_controllers)/bagfiles/bag"/>

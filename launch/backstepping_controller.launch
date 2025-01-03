@@ -9,7 +9,7 @@
   <arg name="robot_ip" default="172.16.0.3"/>
 
   <!-- load initial guess parameters -->
-  <group ns="backstepping_controller">
+  <group ns="controller">
     <rosparam command="load" 	file="$(find panda_controllers)/config/inertial/inertial_DH_REG.yaml" />
   </group>
   <!-- load controller parameters -->

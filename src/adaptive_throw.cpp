@@ -407,15 +407,15 @@ int main(int argc, char **argv)
 	pub_hand_qbh2 = node_handle.advertise<trajectory_msgs::JointTrajectory>("/robot/gripper/qbhand2m1/control/qbhand2m1_synergies_trajectory_controller/command", 1);
 
 	ros::Publisher pub_error = node_handle.advertise<franka_msgs::ErrorRecoveryActionGoal>(robot_name + "/franka_control/error_recovery/goal", 1);
-	ros::Publisher pub_traj_cartesian = node_handle.advertise<panda_controllers::desTrajEE>("/slotine_controller_OS/command_cartesian", 1);
-	ros::Publisher pub_rpy = node_handle.advertise<panda_controllers::rpy>("/CT_mod_controller_OS/command_rpy", 1);
-	ros::Publisher pub_cmd_joints_CT = node_handle.advertise<sensor_msgs::JointState>("/CT_mod_controller_OS/command_joints", 1);
-	ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/adaptiveFlag", 1);
-	ros::Publisher pub_impedanceGains = node_handle.advertise<panda_controllers::impedanceGain>("/CT_mod_controller_OS/impedanceGains", 1);
-	ros::Publisher pub_cmd_joints = node_handle.advertise<sensor_msgs::JointState>("/computed_torque_mod_controller/command_joints", 1);
-	// ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/computed_torque_mod_controller/adaptiveFlag", 1);
-	ros::Publisher pub_flag_joints = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/jointsFlag", 1);
-	ros::Publisher pub_flag_resetAdp = node_handle.advertise<panda_controllers::flag>("/CT_mod_controller_OS/resetFlag", 1);
+	ros::Publisher pub_traj_cartesian = node_handle.advertise<panda_controllers::desTrajEE>("/controller/command_cartesian", 1);
+	ros::Publisher pub_rpy = node_handle.advertise<panda_controllers::rpy>("/controller/command_rpy", 1);
+	// ros::Publisher pub_cmd_joints = node_handle.advertise<sensor_msgs::JointState>("/controller/command_joints", 1);
+	ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/controller/adaptiveFlag", 1);
+	ros::Publisher pub_impedanceGains = node_handle.advertise<panda_controllers::impedanceGain>("/controller/impedanceGains", 1);
+	ros::Publisher pub_cmd_joints = node_handle.advertise<sensor_msgs::JointState>("/controller/command_joints", 1);
+	// ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/controller/adaptiveFlag", 1);
+	ros::Publisher pub_flag_joints = node_handle.advertise<panda_controllers::flag>("/controller/jointsFlag", 1);
+	ros::Publisher pub_flag_resetAdp = node_handle.advertise<panda_controllers::flag>("/controller/resetFlag", 1);
 
 	// ----- Messages ----- //
 	panda_controllers::flag adaptive_flag_msg;
@@ -900,7 +900,7 @@ int main(int argc, char **argv)
 						traj_joints_msg.velocity[i] = traj_joints.vel(i);
 						traj_joints_msg.effort[i] = traj_joints.acc(i);
 					}
-					pub_cmd_joints_CT.publish(traj_joints_msg);
+					pub_cmd_joints.publish(traj_joints_msg);
 					
 				}else{	
 					traj_msg.header.stamp = ros::Time::now();
