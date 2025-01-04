@@ -5,84 +5,84 @@ dynamics:
   link1:
     inertial:
       mass: 5.0
-      m_CoM_x: 0.0
+      m_CoM_x: 0.01
       m_CoM_y: 0.0
-      m_CoM_z: 0.0
-      Ixx: 0.0
-      Ixy: 0.0
+      m_CoM_z: -0.2
+      Ixx: 0.7
+      Ixy: -0.0
       Ixz: 0.0
-      Iyy: 0.0
+      Iyy: 0.5
       Iyz: 0.0
       Izz: 0.0
   link2:
     inertial:
-      mass: 1.0
+      mass: 0.5
       m_CoM_x: 0.0
-      m_CoM_y: 0.0
+      m_CoM_y: 0.01
       m_CoM_z: 0.0
-      Ixx: 0.0
+      Ixx: 0.05
       Ixy: 0.0
       Ixz: 0.0
-      Iyy: 0.0
+      Iyy: 0.01
       Iyz: 0.0
-      Izz: 0.0
+      Izz: 0.01
   link3:
     inertial:
       mass: 3.0
-      m_CoM_x: 0.0
-      m_CoM_y: 0.0
-      m_CoM_z: 0.0
-      Ixx: 0.0
+      m_CoM_x: 0.1
+      m_CoM_y: 0.15
+      m_CoM_z: 0.15
+      Ixx: 0.1
       Ixy: 0.0
       Ixz: 0.0
-      Iyy: 0.0
+      Iyy: 0.1
       Iyz: 0.0
       Izz: 0.0
   link4:
     inertial:
-      mass: 3.0
-      m_CoM_x: 0.0
-      m_CoM_y: 0.0
-      m_CoM_z: 0.0
-      Ixx: 0.0
-      Ixy: 0.0
-      Ixz: 0.0
-      Iyy: 0.0
-      Iyz: 0.0
-      Izz: 0.0
+      mass: 3.5
+      m_CoM_x: -0.1
+      m_CoM_y: 0.4
+      m_CoM_z: 0.1
+      Ixx: 0.05
+      Ixy: 0.02
+      Ixz: 0.003
+      Iyy: 0.03
+      Iyz: -0.001
+      Izz: 0.07
   link5:
     inertial:
       mass: 1.0
-      m_CoM_x: 0.0
-      m_CoM_y: 0.0
-      m_CoM_z: 0.0
-      Ixx: 0.0
-      Ixy: 0.0
-      Ixz: 0.0
-      Iyy: 0.0
+      m_CoM_x: -0.01
+      m_CoM_y: 0.04
+      m_CoM_z: -0.05
+      Ixx: 0.03
+      Ixy: -0.001
+      Ixz: -0.005
+      Iyy: 0.05
       Iyz: 0.0
-      Izz: 0.0
+      Izz: 0.01
   link6:
     inertial:
-      mass: 1.0
-      m_CoM_x: 0.0
-      m_CoM_y: 0.0
-      m_CoM_z: 0.0
+      mass: 2.0
+      m_CoM_x: 0.1
+      m_CoM_y: -0.02
+      m_CoM_z: -0.02
       Ixx: 0.0
       Ixy: 0.0
       Ixz: 0.0
-      Iyy: 0.0
+      Iyy: 0.01
       Iyz: 0.0
-      Izz: 0.0
+      Izz: 0.01
   link7:
     inertial:
       mass: 1.0
       m_CoM_x: 0.0
       m_CoM_y: 0.0
-      m_CoM_z: 0.0
-      Ixx: 0.0
-      Ixy: 0.0
-      Ixz: 0.0
-      Iyy: 0.0
+      m_CoM_z: 0.03
+      Ixx: 0.01
+      Ixy: -0.001
+      Ixz: -0.001
+      Iyy: 0.02
       Iyz: 0.0
       Izz: 0.0

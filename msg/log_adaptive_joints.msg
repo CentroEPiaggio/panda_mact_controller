@@ -9,6 +9,7 @@ link_params link6
 link_params link7
 
 float64[7] tau_cmd
+float64 condM
 
 float64[7] error_q
 float64[7] dot_error_q

@@ -8,7 +8,7 @@
 	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
 
     <!-- flags -->
-	<arg name="controller"    	default="slotine" />
+	<arg name="controller"    	default="CTmod" />
     <arg name="command_node"    default="true" />
     <arg name="flag_node"       default="true"/>
     
@@ -20,9 +20,9 @@
 	<arg name="gainR"       default="R-1-01-001-0001"/>
     <arg name="adapt"       default="adp-$(arg flag_node)"/>
     <arg name="traj_type"   default="liss"/> <!-- liss - circ - minjerk -->
-    <arg name="param_off"   default="p_zero"/>  <!-- p0, p2, p5, p10, p20 -->
+    <arg name="param_off"   default="allWrong"/>  <!-- p0, allWrong, pW -->
     <arg name="gain_joints"     default="$(arg gainKp)_$(arg gainKv)_$(arg gainR)"/>
-	<arg name="gain_cartesian"	default="$(arg gainLambda)_$(arg gainKd)_$(arg gainR)"/>
+	<arg name="gain_slotine"	default="$(arg gainLambda)_$(arg gainKd)_$(arg gainR)"/>
 	<arg name="gains"	default="$(arg gain_joints)"/>
 
 	<!-- rosbag -->

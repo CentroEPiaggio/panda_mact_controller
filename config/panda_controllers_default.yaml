@@ -16,13 +16,13 @@ computed_torque_controller:
     kp1: 30.0   #default: 120.0
     kp2: 15.0   #default: 70.0
     kp3: 3.0    #default: 50.0
-    kv1: 30.0
-    kv2: 15.0
-    kv3: 3.0
+    kv1: 15.0
+    kv2: 7.5
+    kv3: 1.5
     dt: 0.001
     # gainRlinks: [0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01]                   # gain for R matrix
     gainRlinks: [1, 1, 1, 1, 1, 1, 1] 
-    gainRparam: [1, 0.1, 0.01]                          # gain proportional to [mass, mass*length, mass*length^2] 
+    gainRparam: [1, 0.1, 0.01, 0.001]                          # gain proportional to [mass, mass*length, mass*length^2] 
     update_param: false
     # P11: [0.5349, 0.0667, 0.0667, 0.0667, 0.0836, 0.0836, 0.2222]
     # P22: [0.4703, 5.0167, 5.0167, 5.0167, 5.0333, 5.0333, 5.1667]

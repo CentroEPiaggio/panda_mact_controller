@@ -12,7 +12,7 @@
 <launch>
 
 	<!-- set controller -->
-	<arg name="controller_name" 	default="slotine_controller" />
+	<arg name="controller_name" 	default="computed_torque_mod_controller" />
 
 	<!-- <arg name="package" 			default="panda_controllers" /> -->
 	<arg name="arm_id" 				default="panda" doc="Name of the panda robot to spawn" />
@@ -25,9 +25,9 @@
 	
 	<!-- to load yaml -->
 	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
-	<group ns="controller">
+	<!-- <group ns="controller">
 		<rosparam command="load" 	file="$(find panda_controllers)/config/inertial/inertial_DH_REG.yaml" />
-	</group>
+	</group> -->
 
 	<!-- to load gazebo (and rviz) -->
 	<include file="$(find panda_controllers)/launch/gazebo/panda.launch">

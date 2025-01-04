@@ -105,39 +105,13 @@ namespace panda_controllers{
 	    	}
 	    }
 
-        //  /* Verifica corretta acquisizizone(da dove?) dei parametri inerziali del robot(stimati) */
-        // for(int i=0; i<NJ; i++){
-        //     double mass, cmx, cmy, cmz, xx, xy, xz, yy, yz, zz,d1, d2;
-        //     if (!node_handle.getParam("link"+std::to_string(i+1)+"/mass", mass) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_x", cmx) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_y", cmy) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_z", cmz) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Ixx", xx) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Ixy", xy) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Ixz", xz) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Iyy", yy) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Iyz", yz) ||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/Izz", zz)||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/d1", d1)||
-        //         !node_handle.getParam("link"+std::to_string(i+1)+"/d2", d2)){
-                
-        //         ROS_ERROR("Computed_torque: Error in parsing inertial parameters!");
-        //         return 1;
-        //     }
-        //     param.segment((PARAM)*i, PARAM) << mass,cmx,cmy,cmz,xx,xy,xz,yy,yz,zz; // inserisco ad ogni passo i parametri in unica colonna in ordine
-        //     param_frict.segment((FRICTION)*i, FRICTION) << d1, d2;
-	    // }
-
-        // /* Credo serva a settare il parametri dinamici del sistema (nel file backsteppinh non è usato)?*/
-        // thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
-
 		// - thunder init - //
 		// get absolute path to franka_conf.yaml file
 		std::string package_path = ros::package::getPath("panda_controllers");
 		std::string path_conf = package_path + "/config/thunder/franka.yaml";
 		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG_allWrong.yaml";
 		frankaRobot.load_conf(path_conf);
-		// frankaRobot.load_par_REG(path_par_REG);
+		frankaRobot.load_par_REG(path_par_REG);
 		param = frankaRobot.get_par_REG();
 		param_frict = frankaRobot.get_par_Dl();
 		// param_init = param_REG;

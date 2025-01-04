@@ -1,6 +1,7 @@
 //various library on which we work on
 #include <pluginlib/class_list_macros.h>
-#include <panda_controllers/computed_torque.h> //library of the computed torque 
+#include <panda_controllers/computed_torque.h> //library of the computed torque
+#include <ros/package.h> 
 
 namespace panda_controllers{
 
@@ -123,31 +124,40 @@ bool ComputedTorque::init(hardware_interface::RobotHW* robot_hw, ros::NodeHandle
 	//std::cout<<"\n P matrix:\n"<<P<<"\n";
 	/* Assigning inertial parameters for initial guess of panda parameters to compute dynamics with regressor */
 
-
-	for(int i=0; i<NJ; i++){
-		double mass, cmx, cmy, cmz, xx, xy, xz, yy, yz, zz;
-		if (!node_handle.getParam("link"+std::to_string(i+1)+"/mass", mass) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_x", cmx) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_y", cmy) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_z", cmz) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/Ixx", xx) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/Ixy", xy) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/Ixz", xz) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/Iyy", yy) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/Iyz", yz) ||
-			!node_handle.getParam("link"+std::to_string(i+1)+"/Izz", zz)){
+	// for(int i=0; i<NJ; i++){
+	// 	double mass, cmx, cmy, cmz, xx, xy, xz, yy, yz, zz;
+	// 	if (!node_handle.getParam("link"+std::to_string(i+1)+"/mass", mass) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_x", cmx) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_y", cmy) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/m_CoM_z", cmz) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Ixx", xx) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Ixy", xy) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Ixz", xz) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Iyy", yy) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Iyz", yz) ||
+	// 		!node_handle.getParam("link"+std::to_string(i+1)+"/Izz", zz)){
 			
-			ROS_ERROR("Computed_torque: Error in parsing inertial parameters!");
-			return 1;
-		}
-		param.segment(PARAM*i, PARAM) << mass,cmx,cmy,cmz,xx,xy,xz,yy,yz,zz;
-	}
-	//std::cout<<"\ninit param:\n"<<param<<"\n";
-	thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
-	//std::cout<<"\ninit param_dyn:\n"<<param_dyn<<"\n";
+	// 		ROS_ERROR("Computed_torque: Error in parsing inertial parameters!");
+	// 		return 1;
+	// 	}
+	// 	param.segment(PARAM*i, PARAM) << mass,cmx,cmy,cmz,xx,xy,xz,yy,yz,zz;
+	// }
+	// //std::cout<<"\ninit param:\n"<<param<<"\n";
+	// thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
+	// //std::cout<<"\ninit param_dyn:\n"<<param_dyn<<"\n";
+
+	// - thunder init - //
+	// get absolute path to franka_conf.yaml file
+	std::string package_path = ros::package::getPath("panda_controllers");
+	std::string path_conf = package_path + "/config/thunder/franka.yaml";
+	std::string path_par_REG = package_path + "/config/thunder/franka_par_REG_allWrong.yaml";
+	frankaRobot.load_conf(path_conf);
+	frankaRobot.load_par_REG(path_par_REG);
+	param = frankaRobot.get_par_REG();
+	// param_frict = frankaRobot.get_par_Dl();
+	// param_init = param_REG;
 
 	/* Inizializing the R gains to update parameters*/
-	
 	std::vector<double> gainRlinks(NJ), gainRparam(3), gainLambda(6); // ?
 	Eigen::Matrix<double,PARAM,PARAM> Rlink;
 
@@ -277,7 +287,6 @@ void ComputedTorque::update(const ros::Time&, const ros::Duration& period)
 	dot_q_curr = Eigen::Map<Eigen::Matrix<double, 7, 1>>(robot_state.dq.data());
 
 	// ----- Filters ----- //
-	// Filtro velocità e accelerazioni dopo calcolo errore
 	addValue(buffer_dq, dot_q_curr, WIN_LEN);
 	dq_est = obtainMean(buffer_dq);
 	ddot_q_curr = (dq_est - dot_q_curr_old)/dt;
@@ -340,7 +349,8 @@ void ComputedTorque::update(const ros::Time&, const ros::Duration& period)
 
 	/* Update inertial parameters */
 
-	thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
+	// thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
+	// frankaRobot.set_par_REG(param, 1);
 	// frankaRobot.setArguments(q_curr,dot_q_curr,dot_q_curr,ddot;
 	Mest = frankaRobot.get_M(); // inversione potrebbe generare singolarità
 	//std::cout<<"\nMest inv: \n"<<Mest.inverse()<<"\n";
@@ -351,38 +361,39 @@ void ComputedTorque::update(const ros::Time&, const ros::Duration& period)
 	std::cout<<"\n ================================== \n"; */
 	if (update_param_flag){
 		//std::cout<<"\ndot param: \n"<<dot_param<<"\n================================\n";
-		dot_param = Rinv*Y.transpose()*Mest.inverse().transpose()*B.transpose()*P*x; // legge aggiornamento parametri se vi è update
+		dot_param = Rinv*Y.transpose()*Mest.inverse().transpose()*B.transpose()*P*x;
 		param = param + dt*dot_param;
 	}
 	
 	/* update dynamic for control law */
 
-	thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);					// conversion of updated parameters, nuovo oggetto thunderpsnda
+	// thunder_ns::reg2dyn(NJ,PARAM,param,param_dyn);
+	frankaRobot.set_par_REG(param, 1);
 	// frankaRobot.setInertialParams(param_dyn);
 	Mest = frankaRobot.get_M();
 	Cest = frankaRobot.get_C();
 	Gest = frankaRobot.get_G();
 
-	tau_cmd = Mest * command_dot_dot_q_d + Cest*dot_q_curr + Kp_apix * error + Kv_apix * dot_error + Gest - G;  // C->C*dq, legge computed torque
+	tau_cmd = Mest * command_dot_dot_q_d + Cest*dot_q_curr + Kp_apix * error + Kv_apix * dot_error + Gest;
 	
 	//std::cout<<"\ntau \n"<<tau_cmd<<std::endl;
 
 	/* Verify the tau_cmd not exceed the desired joint torque value tau_J_d */
-	tau_cmd = saturateTorqueRate(tau_cmd, tau_J_d);
+	tau_cmd = saturateTorqueRate(tau_cmd, tau_J_d+G);
 	
 
 	/* Set the command for each joint */
 	for (size_t i = 0; i < 7; i++) {
-		joint_handles_[i].setCommand(tau_cmd[i]);
+		joint_handles_[i].setCommand(tau_cmd[i]-G(i));
 	}
 
-	m1 = Mest.col(0);
-	m2 = Mest.col(1);
-	m3 = Mest.col(2);
-	m4 = Mest.col(3);
-	m5 = Mest.col(4);
-	m6 = Mest.col(5);
-	m7 = Mest.col(6);
+	// m1 = Mest.col(0);
+	// m2 = Mest.col(1);
+	// m3 = Mest.col(2);
+	// m4 = Mest.col(3);
+	// m5 = Mest.col(4);
+	// m6 = Mest.col(5);
+	// m7 = Mest.col(6);
 
  	/* Publish messages */
 
@@ -390,13 +401,13 @@ void ComputedTorque::update(const ros::Time&, const ros::Duration& period)
 	
 	msg_log.header.stamp = time_now;
 	
-	fillMsg(msg_deb.MatM1, m1);
-	fillMsg(msg_deb.MatM2, m2);
-	fillMsg(msg_deb.MatM3, m3);
-	fillMsg(msg_deb.MatM4, m4);
-	fillMsg(msg_deb.MatM5, m5);
-	fillMsg(msg_deb.MatM6, m6);
-	fillMsg(msg_deb.MatM7, m7);
+	// fillMsg(msg_deb.MatM1, m1);
+	// fillMsg(msg_deb.MatM2, m2);
+	// fillMsg(msg_deb.MatM3, m3);
+	// fillMsg(msg_deb.MatM4, m4);
+	// fillMsg(msg_deb.MatM5, m5);
+	// fillMsg(msg_deb.MatM6, m6);
+	// fillMsg(msg_deb.MatM7, m7);
 	fillMsg(msg_log.ddot_q_curr, ddot_q_curr);
 	fillMsg(msg_log.error_q, error);
 	fillMsg(msg_log.dot_error_q, dot_error);
@@ -408,6 +419,10 @@ void ComputedTorque::update(const ros::Time&, const ros::Duration& period)
 	fillMsgLink(msg_log.link6, param.segment(50, PARAM));
 	fillMsgLink(msg_log.link7, param.segment(60, PARAM));
 	fillMsg(msg_log.tau_cmd, tau_cmd);
+	// conditioning of Mest
+	Eigen::JacobiSVD<Eigen::MatrixXd> svd(Mest);
+	double cond = svd.singularValues()(0) / svd.singularValues()(svd.singularValues().size()-1);
+	msg_log.condM = cond;
 	//fillMsg(msg_log.tau_tilde, tau_tilde);
 
 	msg_config.header.stamp  = time_now;
