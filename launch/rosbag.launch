@@ -8,22 +8,22 @@
 	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
 
     <!-- flags -->
-	<arg name="controller"    	default="CTmod" />
+	<arg name="controller"    	default="CTmodOS" />
     <arg name="command_node"    default="true" />
     <arg name="flag_node"       default="true"/>
     
     <!-- rosbag file name -->
     <arg name="gainLambda"  default="L-2-1-0.2"/>
     <arg name="gainKd"      default="Kd-15-7.5-1.5"/>
-	<arg name="gainKp"  	default="Kp-30-15-3"/>
-    <arg name="gainKv"      default="Kv-15-7.5-1.5"/>
+	<arg name="gainKp"  	default="Kp-100-10"/>
+    <arg name="gainKv"      default="Kv-50-5"/>
 	<arg name="gainR"       default="R-1-01-001-0001"/>
     <arg name="adapt"       default="adp-$(arg flag_node)"/>
     <arg name="traj_type"   default="liss"/> <!-- liss - circ - minjerk -->
     <arg name="param_off"   default="allWrong"/>  <!-- p0, allWrong, pW -->
-    <arg name="gain_joints"     default="$(arg gainKp)_$(arg gainKv)_$(arg gainR)"/>
+    <arg name="gain_ct"     default="$(arg gainKp)_$(arg gainKv)_$(arg gainR)"/>
 	<arg name="gain_slotine"	default="$(arg gainLambda)_$(arg gainKd)_$(arg gainR)"/>
-	<arg name="gains"	default="$(arg gain_joints)"/>
+	<arg name="gains"	default="$(arg gain_ct)"/>
 
 	<!-- rosbag -->
     <arg name="t1"          value="/controller/current_config"/>

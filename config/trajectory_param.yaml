@@ -1,18 +1,18 @@
 # Trajectory parameters for command_node
 
-duration: &time 81
+duration: &time 60
 
 liss_default: &liss_default
   ampX: 0.0 #ampX: 0.10
   ampY: 0.20 #ampY: 0.15
   ampZ: 0.20 #ampZ: 0.10
   freqX: 1.0 #freqX: 0.20
-  freqY: 0.5 #freqY: 0.10 # must be different from 0
-  freqZ: 0.5 #freqZ: 0.40
+  freqY: 0.8 #freqY: 0.10 # must be different from 0
+  freqZ: 0.8 #freqZ: 0.40
   phiX : 0 #phiX : 0
   phiY : 0 #phiY : 0
   phiZ : 0 #phiZ : 0
-  offX : 0.2 #offX : 0.0
+  offX : 0.0 #offX : 0.0
   offY : 0.0 #offY : 0.0
   offZ : 0.0 #offZ : 0.0
   duration: *time

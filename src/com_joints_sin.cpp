@@ -97,14 +97,7 @@ int main(int argc, char **argv)
         
         ros::spinOnce();
         t = ros::Time::now();
-        if (dt == 0)
-        {
-            dt = t.toSec() - t_start;
-            cout<<"tempo di inizio:"<<dt;
-        }else
-        {
-            dt = t.toSec() - t_start;
-        }
+        dt = t.toSec() - t_start;
         
         // qr << amp_1*sin(1.5*(omega_sin_1)*dt), amp_1*sin(2*(omega_sin_1/2)*dt), amp_1*sin(2*(omega_sin_1/4)*dt), -1.5+2*amp_1*sin(2*(omega_sin_1/4)*dt), 0.0+amp_2*sin(2*(omega_sin_2/6)*dt), 1.5+amp_2*sin(2*(omega_sin_2/6)*dt), 0.0+amp_2*sin(2*(omega_sin_2/8)*dt);
         // dot_qr << 1.5*(omega_sin_1)*amp_1*cos(1.5*(omega_sin_1)*dt), 2*(omega_sin_1/2)*amp_1*cos(2*(omega_sin_1/2)*dt), 2*(omega_sin_1/4)*amp_1*cos(2*(omega_sin_1/4)*dt), 4*(omega_sin_1/4)*amp_1*cos(2*(omega_sin_1/4)*dt), 2*(omega_sin_2/6)*amp_2*cos(2*(omega_sin_2/6)*dt), 2*(omega_sin_2/6)*amp_2*cos(2*(omega_sin_2/6)*dt), 2*(omega_sin_2/8)*amp_2*cos(2*(omega_sin_2/8)*dt);

@@ -28,7 +28,7 @@ bool end_motion = false;
 int flag_traj;
 
 /* Define lissajous parameters */
-double ampX, ampY, ampZ, freqX, freqY, freqZ, phiX, phiY, phiZ, offX, offY, offZ,liss_T;
+double ampX, ampY, ampZ, freqX, freqY, freqZ, phiX, phiY, phiZ, offX, offY, offZ, liss_T;
 
 /* Define minjerk parameters */
 double minjerk_T;
@@ -78,7 +78,6 @@ int main(int argc, char **argv)
         !node_handle.getParam("lissajous/offY", offY) ||
         !node_handle.getParam("lissajous/offZ", offZ) ||
         !node_handle.getParam("lissajous/duration", liss_T) ||
-        !node_handle.getParam("lissajous/offZ", offZ) ||
         !node_handle.getParam("minjerk/xf", minjerk_xf) ||
         !node_handle.getParam("minjerk/yf", minjerk_yf) ||
         !node_handle.getParam("minjerk/zf", minjerk_zf) ||
@@ -129,7 +128,7 @@ int main(int argc, char **argv)
         if (!start){
             t_start = t.toSec();
             start = true;
-        }else if(dt<(duration-period)){
+        }else if(dt<duration){
             dt = t.toSec() - t_start;
         }else if(!end_motion){
             cout<<"\n=== tempo terminato ===\n";
@@ -187,15 +186,16 @@ void lissajous(const double dt_, const vec3d p0){
     double A = ampX, B = ampY, C = ampZ;
     double a = freqX, b = freqY, c = freqZ;
     double dx = phiX, dy = phiY, dz = phiZ;
-    double t0 = 1.0/(4*b);
+    // double t0 = 1.0/(4*b);
+	double t0 = 0.0;
     //std::cout<<t0<<std::endl;
     dt = dt_;
-/*     x0 = p0(0) + offX;
+    x0 = p0(0) + offX;
     y0 = p0(1) + offY;
-    z0 = p0(2) + offZ; */
-    x0 = 0.380 + offX;
-    y0 = 0.000 + offY;
-    z0 = 0.400 + offZ;
+    z0 = p0(2) + offZ;
+    // x0 = 0.380 + offX;
+    // y0 = 0.000 + offY;
+    // z0 = 0.400 + offZ;
 
     // position_t << 
     //     x0 + A * std::sin(2*M_PI * a * (dt-t0) + dx),

@@ -5,8 +5,10 @@
 ✔ find gains slotine and slotine_OS for comparative CT @done (12/31/2024, 3:07:53 PM)
 ✔ oscillations problem on CT_mod_OS, solved but not so stable? @done (12/23/2024, 2:38:25 PM)
 ✔ each controller at the same topic, one for joints, one for cartesian @done (1/3/2025, 10:22:50 AM)
-☐ si vede poco la differenza tra adattivo e non, sarebbe buono allWrongOld ma è troppo per il CTclassic.
-☐ prova a trovare un par_REG che non faccia completamente esplodere CTclassic ma che dia anche un po di differenza agli altri.
+☐ slotine_OS cartesian error on logging
+☐ test on friction
+✔ problem on trajectory following of CT_mod_OS @done (1/4/2025, 11:43:52 PM)
+☐ command cartesian problem if runned more than once
 ☐ big cleaning
 
 adaptive_throw:

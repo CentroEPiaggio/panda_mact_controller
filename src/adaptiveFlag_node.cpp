@@ -22,7 +22,7 @@ int main(int argc, char **argv)
 	ros::Rate loop_rate(frequency); // 100 Hz,10 volte più lento del controllore
 	
 	/* Publisher */
-	ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("adaptiveFlag", 1);
+	ros::Publisher pub_flagAdaptive = node_handle.advertise<panda_controllers::flag>("/controller/adaptiveFlag", 1);
 
 	panda_controllers::flag msg_update_flag;
 

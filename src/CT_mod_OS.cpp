@@ -78,26 +78,6 @@ namespace panda_controllers{
 		Kn(5,5) = kn2;
 		Kn(6,6) = kn3; 
 
-		/*Setting joints parameters for joints movement*/
-		Kp_j = Eigen::MatrixXd::Identity(7, 7);
-		Kp_j(0,0) = 30; 
-		Kp_j(1,1) = 30; 
-		Kp_j(2,2) = 30; 
-		Kp_j(3,3) = 30; 
-		Kp_j(4,4) = 15; 
-		Kp_j(5,5) = 15; 
-		Kp_j(6,6) = 3;
-	   
-		Kv_j = Eigen::MatrixXd::Identity(7, 7);
-		Kv_j(0,0) = 15; 
-		Kv_j(1,1) = 15; 
-		Kv_j(2,2) = 15; 
-		Kv_j(3,3) = 15; 
-		Kv_j(4,4) = 7.5; 
-		Kv_j(5,5) = 7.5; 
-		Kv_j(6,6) = 1.5;
-
-
 		/* Assigning the time */
 		if (!node_handle.getParam("dt", dt)) {
 			ROS_ERROR("Computed Torque: Could not get parameter dt!");
@@ -188,7 +168,7 @@ namespace panda_controllers{
 		// get absolute path to franka_conf.yaml file
 		std::string package_path = ros::package::getPath("panda_controllers");
 		std::string path_conf = package_path + "/config/thunder/franka.yaml";
-		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG.yaml";
+		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG_allWrong.yaml";
 		frankaRobot.load_conf(path_conf);
 		frankaRobot.load_par_REG(path_par_REG);
 		param = frankaRobot.get_par_REG();
@@ -564,7 +544,7 @@ namespace panda_controllers{
 
 		/* Verify the tau_cmd not exceed the desired joint torque value tau_J_d */
 		// tau_cmd = saturateTorqueRate(tau_cmd, tau_J_curr); // works very bad, too much noise in the joint sensors
-		tau_cmd = saturateTorqueRate(tau_cmd, tau_cmd_old);
+		tau_cmd = saturateTorqueRate(tau_cmd, tau_J);
 
 		/* Set the command for each joint */
 		for (size_t i = 0; i < 7; i++) {
