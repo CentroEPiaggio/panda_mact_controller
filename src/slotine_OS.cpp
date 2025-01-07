@@ -145,11 +145,9 @@ namespace panda_controllers{
         // this->sub_command_ = node_handle.subscribe<sensor_msgs::JointState> ("/controller/command_joints", 1, &Slotine_OS::setCommandCB, this);
         this->sub_flag_update_ = node_handle.subscribe<panda_controllers::flag> ("/controller/adaptiveFlag", 1, &Slotine_OS::setFlagUpdate, this);
         
-        this->pub_err_ = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging", 1); //dà informazione a topic loggin l'errore che si commette 
+        this->pub_log_joints = node_handle.advertise<panda_controllers::log_adaptive_joints> ("/controller/logging_joints", 1);
+		this->pub_log_cartesian = node_handle.advertise<panda_controllers::log_adaptive_cartesian> ("/controller/logging", 1); //Public error variables and tau
         this->pub_config_ = node_handle.advertise<panda_controllers::point>("/controller/current_config", 1); //dà informazione sulla configurazione usata
-
-        /* Initialize regressor object (oggetto thunderpanda) */
-        // frankaRobot.init(NJ);
 
         return true;
     }
@@ -299,7 +297,7 @@ namespace panda_controllers{
         error_msg.header.stamp = ros::Time::now();
         error_msg.position = err_vec;
         error_msg.velocity = dot_err_vec;
-        this->pub_err_.publish(error_msg);*/
+        this->pub_log_joints.publish(error_msg);*/
 
         /* Sempre stessi valori dei guadagni*/
     	// Kp_apix = Kp;
@@ -480,29 +478,48 @@ namespace panda_controllers{
 
         /* Publish messages (errore di posizione e velocità, coppia comandata ai giunti, parametri dinamici dei vari giunti stimati)*/
         time_now = ros::Time::now();
-        msg_log.header.stamp = time_now;
 
-        fillMsg(msg_log.error_q, error);
-        fillMsg(msg_log.dot_error_q, dot_error);
-        fillMsg(msg_log.q_cur, q_curr);
-		fillMsg(msg_log.dot_q_cur, dot_q_curr);
-        fillMsgLink(msg_log.link1, param_tot.segment(0, PARAM+FRICTION));
-        fillMsgLink(msg_log.link2, param_tot.segment(12, PARAM+FRICTION));
-        fillMsgLink(msg_log.link3, param_tot.segment(24, PARAM+FRICTION));
-        fillMsgLink(msg_log.link4, param_tot.segment(36, PARAM+FRICTION));
-        fillMsgLink(msg_log.link5, param_tot.segment(48, PARAM+FRICTION));
-        fillMsgLink(msg_log.link6, param_tot.segment(60, PARAM+FRICTION));
-        fillMsgLink(msg_log.link7, param_tot.segment(72, PARAM+FRICTION));
-        fillMsg(msg_log.tau_cmd, tau_cmd);
-        fillMsg(msg_log.ddot_q_curr, ddot_q_curr);
+		// - msg log_joints - //
+        msg_log_joints.header.stamp = time_now;
+        fillMsg(msg_log_joints.error_q, error);
+        fillMsg(msg_log_joints.dot_error_q, dot_error);
+        fillMsg(msg_log_joints.q_cur, q_curr);
+		fillMsg(msg_log_joints.dot_q_cur, dot_q_curr);
+        fillMsgLink(msg_log_joints.link1, param_tot.segment(0, PARAM+FRICTION));
+        fillMsgLink(msg_log_joints.link2, param_tot.segment(12, PARAM+FRICTION));
+        fillMsgLink(msg_log_joints.link3, param_tot.segment(24, PARAM+FRICTION));
+        fillMsgLink(msg_log_joints.link4, param_tot.segment(36, PARAM+FRICTION));
+        fillMsgLink(msg_log_joints.link5, param_tot.segment(48, PARAM+FRICTION));
+        fillMsgLink(msg_log_joints.link6, param_tot.segment(60, PARAM+FRICTION));
+        fillMsgLink(msg_log_joints.link7, param_tot.segment(72, PARAM+FRICTION));
+        fillMsg(msg_log_joints.tau_cmd, tau_cmd);
+        fillMsg(msg_log_joints.ddot_q_curr, ddot_q_curr);
+
+		// - msg log_cartesian - //
+		msg_log_cartesian.header.stamp = time_now;
+		fillMsg(msg_log_cartesian.error_pos_EE, error_OS);
+		// fillMsg(msg_log_cartesian.Fext, F_cont);
+		fillMsg(msg_log_cartesian.dot_error_pos_EE, dot_error_OS);
+		fillMsgLink(msg_log_cartesian.link1, param_tot.segment(0, PARAM+FRICTION));
+		fillMsgLink(msg_log_cartesian.link2, param_tot.segment(12, PARAM+FRICTION));
+		fillMsgLink(msg_log_cartesian.link3, param_tot.segment(24, PARAM+FRICTION));
+		fillMsgLink(msg_log_cartesian.link4, param_tot.segment(36, PARAM+FRICTION));
+		fillMsgLink(msg_log_cartesian.link5, param_tot.segment(48, PARAM+FRICTION));
+		fillMsgLink(msg_log_cartesian.link6, param_tot.segment(60, PARAM+FRICTION));
+		fillMsgLink(msg_log_cartesian.link7, param_tot.segment(72, PARAM+FRICTION));
+		fillMsg(msg_log_cartesian.tau_cmd, tau_cmd);
+		fillMsg(msg_log_cartesian.tau_tilde, err_param);
+		fillMsg(msg_log_cartesian.dot_qr, dqr);
+		fillMsg(msg_log_cartesian.ddot_qr, ddqr);
 
         msg_config.header.stamp  = time_now;
         msg_config.xyz.x = ee_position(0); 
         msg_config.xyz.y = ee_position(1);
         msg_config.xyz.z = ee_position(2);
 
-        this->pub_err_.publish(msg_log); // publico su nodo logging, i valori dei parametri aggiornati con la legge di controllo, e e dot_e (in pratica il vettori di stato del problema aumentato) 
-        this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?
+        this->pub_log_joints.publish(msg_log_joints);
+        this->pub_log_cartesian.publish(msg_log_cartesian);
+		this->pub_config_.publish(msg_config); // publico la configurazione dell'EE?
     }
 
     void Slotine_OS::stopping(const ros::Time&)

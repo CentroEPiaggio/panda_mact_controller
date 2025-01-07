@@ -8,9 +8,9 @@
 	<rosparam command="load" 	file="$(find panda_controllers)/config/panda_controllers_default.yaml" />
 
     <!-- flags -->
-	<arg name="controller"    	default="CTmodOS" />
+	<arg name="controller"    	default="CTmodOS_highDadp" />
     <arg name="command_node"    default="true" />
-    <arg name="flag_node"       default="true"/>
+    <arg name="flag_node"       default="false"/>
     
     <!-- rosbag file name -->
     <arg name="gainLambda"  default="L-2-1-0.2"/>

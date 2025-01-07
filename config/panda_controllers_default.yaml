@@ -97,9 +97,9 @@ CT_mod_controller_OS:
     kv5: 5.0
     kv6: 5.0
     # joints level terms, null control
-    kn1: 100.0
-    kn2: 50.0
-    kn3: 20.0
+    kn1: 30.0
+    kn2: 15.0
+    kn3: 3.0
     dt: 0.001
     gainRlinks: [1, 1, 1, 1, 1, 1, 1]                   # gain for R matrix
     gainRparam: [1, 0.1, 0.01, 1, 0.0]                  # gain stands for [mass, m_CoM, I, d1, d2]

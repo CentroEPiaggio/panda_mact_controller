@@ -27,6 +27,7 @@
 #include "panda_controllers/desTrajEE.h"
 #include "panda_controllers/link_params.h"
 #include "panda_controllers/log_adaptive_joints.h"
+#include "panda_controllers/log_adaptive_cartesian.h"
 #include "panda_controllers/flag.h"
 
 // #include "utils/ThunderPanda.h"
@@ -202,7 +203,8 @@ namespace panda_controllers
         ros::Subscriber sub_command_;
         ros::Subscriber sub_flag_update_;
         
-        ros::Publisher pub_err_;
+        ros::Publisher pub_log_joints;
+		ros::Publisher pub_log_cartesian;
         ros::Publisher pub_config_;
         ros::Publisher pub_opt_;
         
@@ -225,7 +227,8 @@ namespace panda_controllers
         void fillMsg(boost::array<double, N>& msg_, const Eigen::VectorXd& data_);
         void fillMsgLink(panda_controllers::link_params &msg_, const Eigen::VectorXd& data_);
 
-        panda_controllers::log_adaptive_joints msg_log;
+        panda_controllers::log_adaptive_joints msg_log_joints;
+		panda_controllers::log_adaptive_cartesian msg_log_cartesian;
         panda_controllers::point msg_config;
         // panda_controllers::udata msg_opt;
     };

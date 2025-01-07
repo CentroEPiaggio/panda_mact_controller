@@ -65,7 +65,7 @@ dynamics:
       Iyz: 1.9169e-2
     friction:
       symb: [1,1]
-      Dl: [0.1, 0.01]
+      Dl: [1.0, 0.01]
 
   link2:
     inertial:
@@ -82,7 +82,7 @@ dynamics:
       Iyz: 7.0400e-04
     friction:
       symb: [1,1]
-      Dl: [0.1, 0.01]
+      Dl: [1.0, 0.01]
 
   link3:
     inertial:
@@ -99,7 +99,7 @@ dynamics:
       Iyz: -1.2805e-02
     friction:
       symb: [1,1]
-      Dl: [0.1, 0.01]
+      Dl: [1.0, 0.01]
 
   link4:
     inertial:
@@ -116,7 +116,7 @@ dynamics:
       Iyz: 8.6410e-03
     friction:
       symb: [1,1]
-      Dl: [0.1, 0.01]
+      Dl: [1.0, 0.01]
 
   link5:
     inertial:
@@ -133,7 +133,7 @@ dynamics:
       Iyz: 2.2900e-04
     friction:
       symb: [1,1]
-      Dl: [0.1, 0.01]
+      Dl: [1.0, 0.01]
 
   link6:
     inertial:
@@ -150,7 +150,7 @@ dynamics:
       Iyz: 3.4100e-04
     friction:
       symb: [1,1]
-      Dl: [0.1, 0.01]
+      Dl: [1.0, 0.01]
 
   link7:
     inertial:
@@ -167,6 +167,6 @@ dynamics:
       Izz: 4.815e-03
     friction:
       symb: [1,1]
-      Dl: [0.1, 0.01]
+      Dl: [1.0, 0.01]
 
 

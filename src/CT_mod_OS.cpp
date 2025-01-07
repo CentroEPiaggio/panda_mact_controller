@@ -173,6 +173,7 @@ namespace panda_controllers{
 		frankaRobot.load_par_REG(path_par_REG);
 		param = frankaRobot.get_par_REG();
 		param_frict = frankaRobot.get_par_Dl();
+		// cout << "param_frict: " << param_frict;
 		Eigen::Matrix<double,PARAM,PARAM> Rlink;
 		Eigen::Matrix<double,FRICTION,FRICTION> Rlink_fric;
 		if (!node_handle.getParam("gainRlinks", gainRlinks) ||
@@ -194,7 +195,7 @@ namespace panda_controllers{
 		Rlink(2,2) = Rlink(1,1);
 		Rlink(3,3) = Rlink(1,1);
 		Rlink(4,4) = gainRparam[2];
-		Rlink(5,5) = gainRparam[3];
+		Rlink(5,5) = gainRparam[2];
 		Rlink(6,6) = Rlink(5,5);
 		Rlink(7,7) = Rlink(4,4);
 		Rlink(8,8) = Rlink(5,5);
@@ -236,10 +237,10 @@ namespace panda_controllers{
 		/*Initialize Stack Procedure*/
 		// l = 0;
 		// count = 0;
-		epsilon = 0.1;
+		// epsilon = 0.1;
 		// update_opt_flag = false;
 		reset_adp_flag = false;
-		lambda_min = 0;
+		// lambda_min = 0;
 	   
 		// S.setZero(10);
 		// H.setZero(10,70);
@@ -312,7 +313,7 @@ namespace panda_controllers{
 		dot_param_frict.setZero();
 
 		// frankaRobot.setInertialParams(param_dyn); // To compute Extimate Matrix M,G,C
-		frankaRobot.set_par_REG(param); 
+		// frankaRobot.set_par_REG(param); 
 		frankaRobot.setArguments(q_curr, dot_q_curr, dot_q_curr, ddot_q_curr); // To compute jacobian and regressor
 
 		// G = Eigen::Map<Eigen::Matrix<double, NJ, 1>> (model_handle_->getGravity().data());
@@ -463,7 +464,7 @@ namespace panda_controllers{
 
 		/* Error definition in Null Space*/
 		dot_error_q = dot_qr - dot_q_curr;
-		// error_Nq0 = q_c - q_curr;
+		error_Nq0 = q_c - q_curr;
 		// dot_error_Nq0 = N1*(error_Nq0-dot_q_curr);
 
 		/* Update and Compute Regressor */
@@ -485,7 +486,7 @@ namespace panda_controllers{
 		/* Friction matrix online creation*/
 		Dest.setZero();
 		for(int i = 0; i < 7; ++i){
-			Dest(i,i) = param_frict((FRICTION)*i,0)*dot_q_curr(i) + param_frict((FRICTION)*i+1,0)*deltaCompute(dot_q_curr(i));
+			Dest(i,i) = param_frict(FRICTION*i,0)*dot_q_curr(i) + param_frict((FRICTION*i)+1,0)*deltaCompute(dot_q_curr(i));
 		}
 
 		/*Friction Regressor*/       
@@ -510,7 +511,7 @@ namespace panda_controllers{
 		if (update_param_flag){
 			dot_param = 0.01*Rinv*(Y_mod.transpose()*dot_error_q + 0.3*Y_norm.transpose()*(err_param));
 			param = param + dt*dot_param; 
-			dot_param_frict = 0.1*Rinv_fric*(Y_D.transpose()*dot_error_q + 0.3*Y_D_norm.transpose()*(err_param));
+			dot_param_frict = Rinv_fric*(Y_D.transpose()*dot_error_q + 0.3*Y_D_norm.transpose()*(err_param));
 			param_frict = param_frict + dt*dot_param_frict;
 		}
 
@@ -535,8 +536,7 @@ namespace panda_controllers{
 	  
 		/* command torque to joint */
 		tau_cmd_old = tau_cmd;
-		// tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp*error + J.transpose()*Kv*dot_error; // + Kn*dot_error_Nq0;
-		// tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error + N1*Kn*(error_Nq0-dot_q_curr);
+		// tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + J.transpose()*Kp*error + J.transpose()*Kv*dot_error + N1*Kn*(error_Nq0-dot_q_curr);
 		tau_cmd = Mest*ddot_qr + Cest*dot_qr + Dest + Gest + Kd*dot_error_q + J.transpose()*Kp*error + N1*Kn*(error_Nq0-dot_q_curr);
 
 		/*For testing without Adp*/
