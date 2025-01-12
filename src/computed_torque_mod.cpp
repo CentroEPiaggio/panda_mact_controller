@@ -109,7 +109,7 @@ namespace panda_controllers{
 		// get absolute path to franka_conf.yaml file
 		std::string package_path = ros::package::getPath("panda_controllers");
 		std::string path_conf = package_path + "/config/thunder/franka.yaml";
-		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG_allWrong.yaml";
+		std::string path_par_REG = package_path + "/config/thunder/franka_par_REG.yaml";
 		frankaRobot.load_conf(path_conf);
 		frankaRobot.load_par_REG(path_par_REG);
 		param = frankaRobot.get_par_REG();

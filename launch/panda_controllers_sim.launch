@@ -12,7 +12,7 @@
 <launch>
 
 	<!-- set controller -->
-	<arg name="controller_name" 	default="CT_mod_controller_OS" />
+	<arg name="controller_name" 	default="slotine_controller_OS" />
 
 	<!-- <arg name="package" 			default="panda_controllers" /> -->
 	<arg name="arm_id" 				default="panda" doc="Name of the panda robot to spawn" />
@@ -55,5 +55,7 @@
 		<arg name="controller_name" value="$(arg controller_name)" />
 		<arg name="clik"            value="$(arg clik)" />
 	</include> -->
+
+	<include file="$(find panda_controllers)/launch/rosbag.launch" ></include>
 	
 </launch>
