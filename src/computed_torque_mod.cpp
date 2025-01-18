@@ -143,16 +143,16 @@ namespace panda_controllers{
         Rlink(9,9) = Rlink(4,4);
 
         Rlink_fric.setZero();
-        Rlink_fric(0,0) = gainRparam[1];
-        Rlink_fric(1,1) = gainRparam[2];
+        Rlink_fric(0,0) = gainRparam[0];
+        Rlink_fric(1,1) = gainRparam[1];
 
 
         /* Calcolo la matrice inversa di R utile per la legge di controllo */
         Rinv.setZero();
         Rinv_fric.setZero();
         for (int i = 0; i<NJ; i++){	
-            Rinv.block(i*(PARAM), i*(PARAM), PARAM, PARAM) = gainRlinks[i]*Rlink; // block permette di fare le operazioni blocco per blocco (dubbio su che principio calcola tale inversa).
-            Rinv_fric.block(i*(FRICTION), i*(FRICTION), FRICTION, FRICTION) = gainRlinks[i]*Rlink_fric; 
+            Rinv.block(i*(PARAM), i*(PARAM), PARAM, PARAM) = gainRlinks[i]*Rlink;
+            Rinv_fric.block(i*(FRICTION), i*(FRICTION), FRICTION, FRICTION) = Rlink_fric; // gainRlinks[i]*Rlink_fric; 
         }
 
         /* Initialize joint (torque,velocity) limits */
@@ -326,7 +326,7 @@ namespace panda_controllers{
         Dest.setZero();
         for(int i = 0; i < 7; ++i){
             // Dest(i,i) = param_frict((FRICTION)*i,0) + param_frict((FRICTION)*i+1,0)*fabs(dot_q_curr(i));
-            Dest(i,i) = param_frict((FRICTION)*i,0) + param_frict((FRICTION)*i+1,0)*deltaCompute(dot_q_curr(i));
+            Dest(i,i) = param_frict((FRICTION)*i,0) + param_frict((FRICTION)*i+1,0)*deltaCompute(dq_est(i));
         }
 
         /* Update and Compute Regressor mod e Regressor Classic*/
@@ -337,16 +337,16 @@ namespace panda_controllers{
         // ROS_INFO_STREAM(Y_norm.transpose());
         // redY_norm = Y_norm.block(0,(NJ-1)*PARAM,NJ,PARAM);
 
-        /*Calcolo a meno del regressore di attrito*/
+        /*friction regressor*/
         Y_D.setZero();
         Y_D_norm.setZero();
         for (int i = 0; i < 7; ++i) {
-            Y_D(i, i * 2) = command_dot_q_d(i); // Imposta 1 sulla diagonale principale
-            // Y_D(i, i * 2 + 1) = command_dot_q_d(i)*fabs(dot_q_curr(i)); // Imposta q_i sulla colonna successiva alla diagonale
-            Y_D(i, i * 2 + 1) = command_dot_q_d(i)*deltaCompute(dot_q_curr(i));
-            Y_D_norm(i, i * 2) = dot_q_curr(i); // Imposta 1 sulla diagonale principale
-            // Y_D_norm(i, i * 2 + 1) = dot_q_curr(i)*fabs(dot_q_curr(i)); // Imposta q_i sulla colonna successiva alla diagonale
-            Y_D_norm(i, i * 2 + 1) = dot_q_curr(i)*deltaCompute(dot_q_curr(i));
+            Y_D(i, i * 2) = dq_est(i);
+            // Y_D(i, i * 2 + 1) = command_dot_q_d(i)*fabs(dot_q_curr(i));
+            Y_D(i, i * 2 + 1) = dq_est(i)*deltaCompute(dq_est(i));
+            Y_D_norm(i, i * 2) = dq_est(i);
+            // Y_D_norm(i, i * 2 + 1) = dot_q_curr(i)*fabs(dot_q_curr(i));
+            Y_D_norm(i, i * 2 + 1) = dq_est(i)*deltaCompute(dq_est(i));
         }
 
         // ROS_INFO_STREAM("Y_D:" << Y_D << "Dest:" << Dest);
@@ -360,15 +360,15 @@ namespace panda_controllers{
         // Y_mod_D << Y_mod, Y_D; // concatenation
         // Y_norm_D << Y_norm, Y_D; // concatenation
         
-        err_param = tau_J - Y_norm*param; // - Y_D_norm*param_frict;
+        err_param = tau_J - Y_norm*param - Y_D_norm*param_frict;
         // param7 = param.segment((NJ-1)*PARAM, PARAM);
 
         /* se vi è stato aggiornamento, calcolo il nuovo valore che paramatri assumono secondo la seguente legge*/
         if (update_param_flag){
             dot_param = 0.01*Rinv*(Y_mod.transpose()*dot_error + 0.3*Y_norm.transpose()*(err_param));
             param = param + dt*dot_param;
-            // dot_param_frict = 0.01*Rinv_fric*(Y_D.transpose()*dot_error + 0.3*Y_D_norm.transpose()*(err_param));
-            // param_frict = param_frict + dt*dot_param_frict;
+            dot_param_frict = 0.01*Rinv_fric*(Y_D.transpose()*dot_error + 0.3*Y_D_norm.transpose()*(err_param));
+            param_frict = param_frict + dt*dot_param_frict;
 	    }
 
 
@@ -386,7 +386,7 @@ namespace panda_controllers{
         Gest = frankaRobot.get_G();
 
         /* command torque to joint */
-        tau_cmd = Mest * command_dot_dot_q_d + Cest * command_dot_q_d  + Kp * error + Kv * dot_error + Gest;
+        tau_cmd = Mest * command_dot_dot_q_d + Cest * command_dot_q_d + Dest*dq_est + Kp * error + Kv * dot_error + Gest;
 
 	    // /* Verify the tau_cmd not exceed the desired joint torque value tau_J_d */
 	    tau_cmd = saturateTorqueRate(tau_cmd, tau_J_d+G);

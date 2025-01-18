@@ -84,6 +84,29 @@ namespace panda_controllers{
 		param = frankaRobot.get_par_REG();
 		param_frict = frankaRobot.get_par_Dl();
 		// param_init = param_REG;
+
+		// // obtain parameter difference
+		// path_par_REG = package_path + "/config/thunder/franka_par_REG_allWrong.yaml";
+		// thunder_franka robot2;
+		// robot2.load_conf(path_conf);
+		// robot2.load_par_REG(path_par_REG);
+		// Eigen::VectorXd param_est = robot2.get_par_REG();
+		// Eigen::VectorXd param_err = param - param_est;
+		// double mean = 0;
+		// for (int i=0; i<70; i++){
+		// 	param_err(i) = fabs(param_err(i)/param(i));
+		// 	if (i%10 < 1) {
+		// 	} else if (i%10 < 4){
+		// 		param_err(i) *= 0.1;
+		// 	} else {
+		// 		param_err(i) *= 0.01;
+		// 	}
+		// 	mean += param_err(i);
+		// 	std::cout << "par_err: " << param_err(i) << std::endl;
+		// }
+		// mean = mean/70;
+		// std::cout << "err mean par: " << mean << std::endl;
+		// // -----------------------------------
         
         /* Inizializing the Lambda and R and Kd gains */
 	    std::vector<double> gainRlinks(NJ), gainRparam(4), gainLambda(6), gainKd(7);
