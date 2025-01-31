@@ -1,13 +1,13 @@
 <?xml version="1.0"?>
 <package format="2">
-	<name>panda_controllers</name>
+	<name>panda_mact_controller</name>
 	<version>1.0.0</version>
-	<description>panda_controllers provides some ROS controllers for using Franka Emika Panda robots with ros_control</description>
+	<description>panda_controllers provides some ROS controllers for using Franka Emika Panda robots with ros_control. In this repository the Modified Adaptive Computed Torque control is implemented.</description>
 	<maintainer email="giorgio.simonini@phd.unipi.it">Giorgio Simonini</maintainer>
 	<license>Apache 2.0</license>
 
-	<url type="repository">https://github.com/CentroEPiaggio/panda_controllers</url>
-	<url type="bugtracker">https://github.com/CentroEPiaggio/panda_controllers/issues</url>
+	<url type="repository">https://github.com/CentroEPiaggio/panda_mact_controller</url>
+	<url type="bugtracker">https://github.com/CentroEPiaggio/panda_mact_controller/issues</url>
 	<author>Giorgio Simonini</author>
 
 	<buildtool_depend>catkin</buildtool_depend>
